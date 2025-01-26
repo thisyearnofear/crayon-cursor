@@ -1,0 +1,35 @@
+.frame {
+  width: 100%;
+  position: fixed;
+  padding: var(--margin);
+  top: 0;
+  z-index: 9;
+  font-size: 12rem;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  
+  .frame-left {
+    display: flex;
+    align-items: center;
+    gap: 20rem;
+    & > a, h1 a{
+      @include underline;
+    }
+  }
+  h1 {
+    font-size: inherit;
+    font-weight: normal;
+  }
+  .cdawrap {
+    max-width: 350rem;
+    text-align: right;
+    line-height: 1.2;
+    a {
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}
