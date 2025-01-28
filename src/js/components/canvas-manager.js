@@ -12,7 +12,8 @@ export default class CanvasManager {
       y: { c: -100, t: -100 },
       delta: { c: 0, t: 0 },
     };
-    this.maxTrailLength = 100;
+    this.polygonHover = { c: 0, t: 0 };
+    this.maxTrailLength = 500;
 
     this.isDown = false;
     this.t = 0;
@@ -31,20 +32,20 @@ export default class CanvasManager {
   resize() {
     this.width = window.innerWidth;
     this.height = window.innerHeight;
-    this.poligon = this.initPoligon();
+    this.polygon = this.initPolygon();
     if (this.app) this.app.resizeCanvas(this.width, this.height, true);
   }
 
-  initPoligon() {
+  initPolygon() {
     const gridSize = { x: 1440, y: 930 };
-    const basePoligon = [
+    const basePolygon = [
       { x: { c: 0, t: 0, rest: 494, hover: 550 }, y: { c: 0, t: 0, rest: 207, hover: 310 } },
       { x: { c: 0, t: 0, rest: 1019, hover: 860 }, y: { c: 0, t: 0, rest: 137, hover: 290 } },
       { x: { c: 0, t: 0, rest: 1035, hover: 820 }, y: { c: 0, t: 0, rest: 504, hover: 520 } },
       { x: { c: 0, t: 0, rest: 377, hover: 620 }, y: { c: 0, t: 0, rest: 531, hover: 560 } },
     ];
 
-    basePoligon.forEach((p) => {
+    basePolygon.forEach((p) => {
       p.x.rest /= gridSize.x;
       p.y.rest /= gridSize.y;
 
@@ -61,7 +62,7 @@ export default class CanvasManager {
       p.y.t = p.y.c = p.y.rest;
     });
 
-    return basePoligon;
+    return basePolygon;
   }
 
   initCanvas() {
@@ -76,6 +77,7 @@ export default class CanvasManager {
     this.mouse.y.c += (this.mouse.y.t - this.mouse.y.c) * 0.08;
     this.mouse.delta.t = Math.sqrt(Math.pow(this.mouse.x.t - this.mouse.x.c, 2) + Math.pow(this.mouse.y.t - this.mouse.y.c, 2));
     this.mouse.delta.c += (this.mouse.delta.t - this.mouse.delta.c) * 0.08;
+    this.polygonHover.c += (this.polygonHover.t - this.polygonHover.c) * 0.08;
 
     if (this.activeTrail) {
       this.activeTrail.push({ x: this.mouse.x.c, y: this.mouse.y.c });
@@ -88,7 +90,7 @@ export default class CanvasManager {
 
     this.trails = this.trails.filter((trail) => trail && trail.length > 0);
 
-    this.poligon.forEach((p, i) => {
+    this.polygon.forEach((p, i) => {
       p.x.c += (p.x.t - p.x.c) * (0.07 - i * 0.01);
       p.y.c += (p.y.t - p.y.c) * (0.07 - i * 0.01);
     });
@@ -101,30 +103,32 @@ export default class CanvasManager {
     p.setup = () => {
       p.createCanvas(this.width, this.height, p.WEBGL);
       p.angleMode(p.DEGREES);
+      brush.noField();
       brush.scaleBrushes(window.innerWidth <= 1024 ? 2.5 : 0.9);
-      brush.field('seabed');
     };
 
     this.availableBrushes = brush.box();
     this.defaultBrush = this.availableBrushes[0];
 
     document.addEventListener('mousedown', () => {
-      this.isDown = true;
+      if(this.mouseupTO) clearTimeout(this.mouseupTO);
       const newTrail = [];
       this.trails.push(newTrail);
       this.activeTrail = newTrail;
     });
     document.addEventListener('mousemove', (e) => this.handleMouseMove(e));
     document.addEventListener('mouseup', () => {
-      this.isDown = false;
-      this.activeTrail = null;
+      if(this.mouseupTO) clearTimeout(this.mouseupTO);
+      this.mouseupTO = setTimeout(() => {
+        this.activeTrail = null;
+      }, 300);
     });
   }
 
   handleMouseMove(e) {
-    const isPoligonHover = this.isPointInPolygon(e.clientX, e.clientY, this.poligon.map((p) => [p.x.c, p.y.c]));
-    this.poligon.forEach((p) => {
-      if (isPoligonHover) {
+    const isPolygonHover = this.isPointInPolygon(e.clientX, e.clientY, this.polygon.map((p) => [p.x.c, p.y.c]));
+    this.polygon.forEach((p) => {
+      if (isPolygonHover) {
         p.x.t = p.x.hover;
         p.y.t = p.y.hover;
       } else {
@@ -132,6 +136,7 @@ export default class CanvasManager {
         p.y.t = p.y.rest;
       }
     });
+    this.polygonHover.t = isPolygonHover ? 1 : 0;
     this.mouse.x.t = e.clientX;
     this.mouse.y.t = e.clientY;
   }
@@ -152,30 +157,36 @@ export default class CanvasManager {
     p.draw = () => {
       p.frameRate(30);
       p.translate(-this.width / 2, -this.height / 2);
-      p.background('white');
+      p.background('#FC0E49');
 
-      brush.set("HB", "#7A200C", 1);
+
       brush.stroke('#7A200C');
+      brush.strokeWeight(1);
+      brush.noFill();
       brush.setHatch("HB", "#7A200C", 1);
       brush.hatch(15, 45, 0.3);
       const time = this.t * 0.01;
       brush.polygon(
-        this.poligon.map((p, i) => [
+        this.polygon.map((p, i) => [
           p.x.c + Math.sin(time * (80 + i * 2)) * (30 + i * 5),
           p.y.c + Math.cos(time * (80 + i * 2)) * (20 + i * 5),
         ])
       );
 
+
+      brush.strokeWeight(1 + 0.01 * this.mouse.delta.c);
       this.trails.forEach((trail) => {
         if (trail.length > 0) {
-          brush.spline(trail.map((t) => [t.x, t.y]), 0.9);
+          brush.spline(trail.map((t) => [t.x, t.y]), 1);
         }
       });
 
+      brush.noFill();
       brush.stroke('#FF7EBE');
       brush.setHatch("HB", "#FFAABF", 1);
-      const r = 2 + 0.05 * this.mouse.delta.c;
-      brush.circle(this.mouse.x.c - r * 0.5, this.mouse.y.c - r * 0.5, r);
+      brush.hatch(5, 30, {rand: 0.1, continuous: true, gradient: 0.3})
+      const r = 5 + 0.05 * this.mouse.delta.c + this.polygonHover.c * (100 + this.mouse.delta.c * 0.5);
+      brush.circle(this.mouse.x.c, this.mouse.y.c, r);
     };
   }
 }
