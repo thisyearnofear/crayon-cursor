@@ -27,6 +27,10 @@ export default class CanvasManager {
     this.mouseup = this.mouseup.bind(this);
 
     window.addEventListener('resize', this.resize);
+    document.addEventListener('mousedown', this.mousedown);
+    document.addEventListener('mousemove', this.mousemove);
+    document.addEventListener('mouseup', this.mouseup);
+
     this.resize();
     this.initCanvas();
   }
@@ -37,7 +41,55 @@ export default class CanvasManager {
     this.polygon = this.initPolygon();
     if (this.app) this.app.resizeCanvas(this.width, this.height, true);
   }
+  initCanvas() {
+    this.app = new p5(this.sketch, this.el);
+    requestAnimationFrame(this.render);
+  }
+  initBrush(p) {
+    brush.instance(p);
+    p.setup = () => {
+      p.createCanvas(this.width, this.height, p.WEBGL);
+      p.angleMode(p.DEGREES);
+      brush.noField();
+      brush.set('2B');
+      brush.scaleBrushes(window.innerWidth <= 1024 ? 2.5 : 0.9);
+    };
+  }
+  sketch(p) {
+    this.initBrush(p);
+    p.draw = () => {
+      p.frameRate(30);
+      p.translate(-this.width / 2, -this.height / 2);
+      p.background('#FC0E49');
 
+      brush.stroke('#7A200C');
+      brush.strokeWeight(1);
+      brush.noFill();
+      brush.setHatch("HB", "#7A200C", 1);
+      brush.hatch(15, 45, 0.3);
+      const time = this.t * 0.01;
+      brush.polygon(
+        this.polygon.map((p, i) => [
+          p.x.c + Math.sin(time * (80 + i * 2)) * (30 + i * 5),
+          p.y.c + Math.cos(time * (80 + i * 2)) * (20 + i * 5),
+        ])
+      );
+
+      brush.strokeWeight(1 + 0.005 * this.mouse.delta.c);
+      this.trails.forEach((trail) => {
+        if (trail.length > 0) {
+          brush.spline(trail.map((t) => [t.x, t.y]), 1);
+        }
+      });
+
+      brush.noFill();
+      brush.stroke('#FF7EBE');
+      brush.setHatch("HB", "#FFAABF", 1);
+      brush.hatch(5, 30, {rand: 0.1, continuous: true, gradient: 0.3})
+      const r = 5 + 0.05 * this.mouse.delta.c + this.polygonHover.c * (100 + this.mouse.delta.c * 0.5);
+      brush.circle(this.mouse.x.c, this.mouse.y.c, r);
+    };
+  }
   initPolygon() {
     const gridSize = { x: 1440, y: 930 };
     const basePolygon = [
@@ -66,12 +118,6 @@ export default class CanvasManager {
 
     return basePolygon;
   }
-
-  initCanvas() {
-    this.app = new p5(this.sketch, this.el);
-    requestAnimationFrame(this.render);
-  }
-
   render(time) {
     const t = time * 0.001;
     this.t = t;
@@ -98,21 +144,6 @@ export default class CanvasManager {
     });
 
     requestAnimationFrame(this.render);
-  }
-
-  initBrush(p) {
-    brush.instance(p);
-    p.setup = () => {
-      p.createCanvas(this.width, this.height, p.WEBGL);
-      p.angleMode(p.DEGREES);
-      brush.noField();
-      brush.set('2B');
-      brush.scaleBrushes(window.innerWidth <= 1024 ? 2.5 : 0.9);
-    };
-
-    document.addEventListener('mousedown', this.mousedown);
-    document.addEventListener('mousemove', this.mousemove);
-    document.addEventListener('mouseup', this.mouseup);
   }
   mousedown(e) {
     if(this.mouseupTO) clearTimeout(this.mouseupTO);
@@ -141,7 +172,6 @@ export default class CanvasManager {
     this.mouse.x.t = e.clientX;
     this.mouse.y.t = e.clientY;
   }
-
   inPolygon(x, y, polygon) {
     let inside = false;
     for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -152,42 +182,5 @@ export default class CanvasManager {
     }
     return inside;
   }
-
-  sketch(p) {
-    this.initBrush(p);
-    p.draw = () => {
-      p.frameRate(30);
-      p.translate(-this.width / 2, -this.height / 2);
-      p.background('#FC0E49');
-
-
-      brush.stroke('#7A200C');
-      brush.strokeWeight(1);
-      brush.noFill();
-      brush.setHatch("HB", "#7A200C", 1);
-      brush.hatch(15, 45, 0.3);
-      const time = this.t * 0.01;
-      brush.polygon(
-        this.polygon.map((p, i) => [
-          p.x.c + Math.sin(time * (80 + i * 2)) * (30 + i * 5),
-          p.y.c + Math.cos(time * (80 + i * 2)) * (20 + i * 5),
-        ])
-      );
-
-
-      brush.strokeWeight(1 + 0.005 * this.mouse.delta.c);
-      this.trails.forEach((trail) => {
-        if (trail.length > 0) {
-          brush.spline(trail.map((t) => [t.x, t.y]), 1);
-        }
-      });
-
-      brush.noFill();
-      brush.stroke('#FF7EBE');
-      brush.setHatch("HB", "#FFAABF", 1);
-      brush.hatch(5, 30, {rand: 0.1, continuous: true, gradient: 0.3})
-      const r = 5 + 0.05 * this.mouse.delta.c + this.polygonHover.c * (100 + this.mouse.delta.c * 0.5);
-      brush.circle(this.mouse.x.c, this.mouse.y.c, r);
-    };
-  }
+  
 }
