@@ -23,6 +23,7 @@ export default class CanvasManager {
     this.initBrush = this.initBrush.bind(this);
     this.resize = this.resize.bind(this);
 
+    window.addEventListener('resize', this.resize);
     this.resize();
     this.initCanvas();
   }
@@ -31,7 +32,7 @@ export default class CanvasManager {
     this.width = window.innerWidth;
     this.height = window.innerHeight;
     this.poligon = this.initPoligon();
-    if (this.app) this.app.resizeCanvas(this.width, this.height);
+    if (this.app) this.app.resizeCanvas(this.width, this.height, true);
   }
 
   initPoligon() {
@@ -100,7 +101,7 @@ export default class CanvasManager {
     p.setup = () => {
       p.createCanvas(this.width, this.height, p.WEBGL);
       p.angleMode(p.DEGREES);
-      brush.scaleBrushes(0.9);
+      brush.scaleBrushes(window.innerWidth <= 1024 ? 2.5 : 0.9);
       brush.field('seabed');
     };
 

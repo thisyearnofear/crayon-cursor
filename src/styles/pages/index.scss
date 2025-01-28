@@ -79,6 +79,24 @@
     }
   }
   @media (max-width: 1024px) {
-    
+    padding: 20px var(--margin);
+    #title {
+      max-width: 200px;
+      margin-bottom: 15px;
+      small {
+        top: 5%;
+        font-size: 5px;
+        max-width: 100px;
+      }
+    }
+    p {
+      font-size: 10px;
+      br {
+        display: none;
+      }
+    }
+    #logos {
+      margin-top: 20px;
+    }
   }
 }
