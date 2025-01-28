@@ -15,7 +15,6 @@ export default class CanvasManager {
     this.polygonHover = { c: 0, t: 0 };
     this.maxTrailLength = 500;
 
-    this.isDown = false;
     this.t = 0;
     this.el = document.getElementById('canvas-container');
 
@@ -23,6 +22,9 @@ export default class CanvasManager {
     this.sketch = this.sketch.bind(this);
     this.initBrush = this.initBrush.bind(this);
     this.resize = this.resize.bind(this);
+    this.mousemove = this.mousemove.bind(this);
+    this.mousedown = this.mousedown.bind(this);
+    this.mouseup = this.mouseup.bind(this);
 
     window.addEventListener('resize', this.resize);
     this.resize();
@@ -104,31 +106,30 @@ export default class CanvasManager {
       p.createCanvas(this.width, this.height, p.WEBGL);
       p.angleMode(p.DEGREES);
       brush.noField();
+      brush.set('2B');
       brush.scaleBrushes(window.innerWidth <= 1024 ? 2.5 : 0.9);
     };
 
-    this.availableBrushes = brush.box();
-    this.defaultBrush = this.availableBrushes[0];
-
-    document.addEventListener('mousedown', () => {
-      if(this.mouseupTO) clearTimeout(this.mouseupTO);
-      const newTrail = [];
-      this.trails.push(newTrail);
-      this.activeTrail = newTrail;
-    });
-    document.addEventListener('mousemove', (e) => this.handleMouseMove(e));
-    document.addEventListener('mouseup', () => {
-      if(this.mouseupTO) clearTimeout(this.mouseupTO);
-      this.mouseupTO = setTimeout(() => {
-        this.activeTrail = null;
-      }, 300);
-    });
+    document.addEventListener('mousedown', this.mousedown);
+    document.addEventListener('mousemove', this.mousemove);
+    document.addEventListener('mouseup', this.mouseup);
   }
-
-  handleMouseMove(e) {
-    const isPolygonHover = this.isPointInPolygon(e.clientX, e.clientY, this.polygon.map((p) => [p.x.c, p.y.c]));
+  mousedown(e) {
+    if(this.mouseupTO) clearTimeout(this.mouseupTO);
+    const newTrail = [];
+    this.trails.push(newTrail);
+    this.activeTrail = newTrail;
+  }
+  mouseup() {
+    if(this.mouseupTO) clearTimeout(this.mouseupTO);
+    this.mouseupTO = setTimeout(() => {
+      this.activeTrail = null;
+    }, 300);
+  }
+  mousemove(e) {
+    const isHover = this.inPolygon(e.clientX, e.clientY, this.polygon.map((p) => [p.x.c, p.y.c]));
     this.polygon.forEach((p) => {
-      if (isPolygonHover) {
+      if (isHover) {
         p.x.t = p.x.hover;
         p.y.t = p.y.hover;
       } else {
@@ -136,12 +137,12 @@ export default class CanvasManager {
         p.y.t = p.y.rest;
       }
     });
-    this.polygonHover.t = isPolygonHover ? 1 : 0;
+    this.polygonHover.t = isHover ? 1 : 0;
     this.mouse.x.t = e.clientX;
     this.mouse.y.t = e.clientY;
   }
 
-  isPointInPolygon(x, y, polygon) {
+  inPolygon(x, y, polygon) {
     let inside = false;
     for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
       const xi = polygon[i][0], yi = polygon[i][1];
@@ -174,7 +175,7 @@ export default class CanvasManager {
       );
 
 
-      brush.strokeWeight(1 + 0.01 * this.mouse.delta.c);
+      brush.strokeWeight(1 + 0.005 * this.mouse.delta.c);
       this.trails.forEach((trail) => {
         if (trail.length > 0) {
           brush.spline(trail.map((t) => [t.x, t.y]), 1);
