@@ -66,7 +66,7 @@ export default class CanvasManager {
       brush.strokeWeight(1);
       brush.noFill();
       brush.setHatch("HB", "#7A200C", 1);
-      brush.hatch(15, 45, 0.3);
+      brush.hatch(15, 45);
       const time = this.t * 0.01;
       brush.polygon(
         this.polygon.map((p, i) => [
@@ -119,8 +119,7 @@ export default class CanvasManager {
     return basePolygon;
   }
   render(time) {
-    const t = time * 0.001;
-    this.t = t;
+    this.t = time * 0.001;
     this.mouse.x.c += (this.mouse.x.t - this.mouse.x.c) * 0.08;
     this.mouse.y.c += (this.mouse.y.t - this.mouse.y.c) * 0.08;
     this.mouse.delta.t = Math.sqrt(Math.pow(this.mouse.x.t - this.mouse.x.c, 2) + Math.pow(this.mouse.y.t - this.mouse.y.c, 2));
