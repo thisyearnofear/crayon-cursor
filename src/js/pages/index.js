@@ -1,6 +1,7 @@
 import '../../styles/index.scss';
 import '../../styles/pages/index.scss';
 import CanvasManager from '../components/canvas-manager';
+import { SignatureControls } from '../components/signature-controls.js';
 
 export default class Index {
   constructor() {
@@ -8,6 +9,7 @@ export default class Index {
     this.resize();
     this.initGrid();
     const canvasManager = new CanvasManager();
+    new SignatureControls(canvasManager);
   }
   initGrid() {
     document.addEventListener('keydown', (e) => {

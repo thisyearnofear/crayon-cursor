@@ -1,8 +1,11 @@
 import * as brush from 'p5.brush';
 import p5 from 'p5';
+import { SignatureCapture } from '../signature-capture.js';
 
 export default class CanvasManager {
   constructor() {
+    this.p5Instance = null;
+    this.signatureCapture = new SignatureCapture();
     this.width = window.innerWidth;
     this.height = window.innerHeight;
     this.trails = [];
@@ -43,11 +46,14 @@ export default class CanvasManager {
   }
   initCanvas() {
     this.app = new p5(this.sketch, this.el);
+    this.p5Instance = this.app; // Store p5 instance
     requestAnimationFrame(this.render);
   }
   initBrush(p) {
     brush.instance(p);
     p.setup = () => {
+      const pixelDensity = window.devicePixelRatio || 1;
+      p.pixelDensity(pixelDensity);
       p.createCanvas(this.width, this.height, p.WEBGL);
       p.angleMode(p.DEGREES);
       brush.noField();
@@ -55,6 +61,28 @@ export default class CanvasManager {
       brush.scaleBrushes(window.innerWidth <= 1024 ? 2.5 : 0.9);
     };
   }
+  captureCanvas() {
+    if (!this.p5Instance) return null;
+    // Get the actual canvas element from p5
+    const canvas = this.p5Instance.canvas || this.p5Instance._renderer.canvas;
+    if (!canvas) return null;
+    
+    // Create a temporary canvas at 2x size for higher quality
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    const scale = 2; // 2x resolution
+    
+    tempCanvas.width = canvas.width * scale;
+    tempCanvas.height = canvas.height * scale;
+    
+    // Scale up the drawing
+    tempCtx.scale(scale, scale);
+    tempCtx.drawImage(canvas, 0, 0);
+    
+    // Get high quality PNG
+    return tempCanvas.toDataURL('image/png', 1.0);
+  }
+
   sketch(p) {
     this.initBrush(p);
     p.draw = () => {
@@ -157,6 +185,10 @@ export default class CanvasManager {
     }, 300);
   }
   mousemove(e) {
+    // Record point if drawing
+    if (this.activeTrail) {
+      this.signatureCapture.recordPoint(e.clientX, e.clientY);
+    }
     const isHover = this.inPolygon(e.clientX, e.clientY, this.polygon.map((p) => [p.x.c, p.y.c]));
     this.polygon.forEach((p) => {
       if (isHover) {

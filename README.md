@@ -1,6 +1,13 @@
-# Stop Motion Crayon Cursor
+# Signature
 
-Implementation of a custom cursor with a stop motion and crayon effect using p5 Brush by [Jorge Toloza](http://jorgetoloza.co).
+An interactive web application that lets users create unique digital signatures using a stop-motion crayon effect. Built on top of the p5 Brush implementation by [Jorge Toloza](http://jorgetoloza.co), with added blockchain integration for minting signatures as NFTs.
+
+## Current Features
+
+- Interactive canvas with stop-motion crayon effect
+- Real-time drawing with mouse interactions
+- WebGL-powered p5.js brush system
+- Organic, hand-drawn animation style
 
 ![Image Title](cover.jpg)
 
@@ -27,6 +34,39 @@ Create the build:
 ```
 npm run build
 ```
+
+## Planned On-chain Features
+
+Upcoming integration with the Zora Protocol will allow users to mint their signatures as NFTs:
+
+### Core Features
+- Timed drawing sessions for signature creation
+- Capture and store drawing data on-chain
+- Multiple minting options:
+  - ERC-721: One-of-one unique signature NFTs
+  - ERC-1155: Multiple editions of the same signature
+  - Zora Protocol Coins: Create a token around your signature
+
+### Technical Implementation Plan
+1. **Drawing Session**
+   - Add timer functionality
+   - Implement drawing data capture
+   - Preview and confirmation system
+
+2. **Blockchain Integration**
+   - Connect wallet functionality
+   - Zora Protocol SDK integration
+   - Smart contract deployment for minting options
+
+3. **User Interface**
+   - Timer controls and display
+   - Minting options selection
+   - Transaction status and confirmation
+
+4. **Storage**
+   - Drawing data storage on IPFS
+   - Metadata generation for NFTs
+   - On-chain signature verification
 
 ## Misc
 
