@@ -1,6 +1,6 @@
-import * as brush from 'p5.brush';
-import p5 from 'p5';
-import { SignatureCapture } from '../signature-capture.js';
+import * as brush from "p5.brush";
+import p5 from "p5";
+import { SignatureCapture } from "../signature-capture.js";
 
 export default class CanvasManager {
   constructor() {
@@ -17,9 +17,12 @@ export default class CanvasManager {
     };
     this.polygonHover = { c: 0, t: 0 };
     this.maxTrailLength = 500;
+    this.frozenTrails = null;
+    this.fadeOutDuration = 2000; // 2 seconds fade out
+    this.fadeOutStartTime = null;
 
     this.t = 0;
-    this.el = document.getElementById('canvas-container');
+    this.el = document.getElementById("canvas-container");
 
     this.render = this.render.bind(this);
     this.sketch = this.sketch.bind(this);
@@ -28,11 +31,13 @@ export default class CanvasManager {
     this.mousemove = this.mousemove.bind(this);
     this.mousedown = this.mousedown.bind(this);
     this.mouseup = this.mouseup.bind(this);
+    this.startFadeOut = this.startFadeOut.bind(this);
+    this.cancelFreeze = this.cancelFreeze.bind(this);
 
-    window.addEventListener('resize', this.resize);
-    document.addEventListener('mousedown', this.mousedown);
-    document.addEventListener('mousemove', this.mousemove);
-    document.addEventListener('mouseup', this.mouseup);
+    window.addEventListener("resize", this.resize);
+    document.addEventListener("mousedown", this.mousedown);
+    document.addEventListener("mousemove", this.mousemove);
+    document.addEventListener("mouseup", this.mouseup);
 
     this.resize();
     this.initCanvas();
@@ -57,7 +62,7 @@ export default class CanvasManager {
       p.createCanvas(this.width, this.height, p.WEBGL);
       p.angleMode(p.DEGREES);
       brush.noField();
-      brush.set('2B');
+      brush.set("2B");
       brush.scaleBrushes(window.innerWidth <= 1024 ? 2.5 : 0.9);
     };
   }
@@ -66,21 +71,21 @@ export default class CanvasManager {
     // Get the actual canvas element from p5
     const canvas = this.p5Instance.canvas || this.p5Instance._renderer.canvas;
     if (!canvas) return null;
-    
+
     // Create a temporary canvas at 2x size for higher quality
-    const tempCanvas = document.createElement('canvas');
-    const tempCtx = tempCanvas.getContext('2d');
+    const tempCanvas = document.createElement("canvas");
+    const tempCtx = tempCanvas.getContext("2d");
     const scale = 2; // 2x resolution
-    
+
     tempCanvas.width = canvas.width * scale;
     tempCanvas.height = canvas.height * scale;
-    
+
     // Scale up the drawing
     tempCtx.scale(scale, scale);
     tempCtx.drawImage(canvas, 0, 0);
-    
+
     // Get high quality PNG
-    return tempCanvas.toDataURL('image/png', 1.0);
+    return tempCanvas.toDataURL("image/png", 1.0);
   }
 
   sketch(p) {
@@ -88,9 +93,9 @@ export default class CanvasManager {
     p.draw = () => {
       p.frameRate(30);
       p.translate(-this.width / 2, -this.height / 2);
-      p.background('#FC0E49');
+      p.background("#FC0E49");
 
-      brush.stroke('#7A200C');
+      brush.stroke("#7A200C");
       brush.strokeWeight(1);
       brush.noFill();
       brush.setHatch("HB", "#7A200C", 1);
@@ -106,25 +111,43 @@ export default class CanvasManager {
       brush.strokeWeight(1 + 0.005 * this.mouse.delta.c);
       this.trails.forEach((trail) => {
         if (trail.length > 0) {
-          brush.spline(trail.map((t) => [t.x, t.y]), 1);
+          brush.spline(
+            trail.map((t) => [t.x, t.y]),
+            1
+          );
         }
       });
 
       brush.noFill();
-      brush.stroke('#FF7EBE');
+      brush.stroke("#FF7EBE");
       brush.setHatch("HB", "#FFAABF", 1);
-      brush.hatch(5, 30, {rand: 0.1, continuous: true, gradient: 0.3})
-      const r = 5 + 0.05 * this.mouse.delta.c + this.polygonHover.c * (100 + this.mouse.delta.c * 0.5);
+      brush.hatch(5, 30, { rand: 0.1, continuous: true, gradient: 0.3 });
+      const r =
+        5 +
+        0.05 * this.mouse.delta.c +
+        this.polygonHover.c * (100 + this.mouse.delta.c * 0.5);
       brush.circle(this.mouse.x.c, this.mouse.y.c, r);
     };
   }
   initPolygon() {
     const gridSize = { x: 1440, y: 930 };
     const basePolygon = [
-      { x: { c: 0, t: 0, rest: 494, hover: 550 }, y: { c: 0, t: 0, rest: 207, hover: 310 } },
-      { x: { c: 0, t: 0, rest: 1019, hover: 860 }, y: { c: 0, t: 0, rest: 137, hover: 290 } },
-      { x: { c: 0, t: 0, rest: 1035, hover: 820 }, y: { c: 0, t: 0, rest: 504, hover: 520 } },
-      { x: { c: 0, t: 0, rest: 377, hover: 620 }, y: { c: 0, t: 0, rest: 531, hover: 560 } },
+      {
+        x: { c: 0, t: 0, rest: 494, hover: 550 },
+        y: { c: 0, t: 0, rest: 207, hover: 310 },
+      },
+      {
+        x: { c: 0, t: 0, rest: 1019, hover: 860 },
+        y: { c: 0, t: 0, rest: 137, hover: 290 },
+      },
+      {
+        x: { c: 0, t: 0, rest: 1035, hover: 820 },
+        y: { c: 0, t: 0, rest: 504, hover: 520 },
+      },
+      {
+        x: { c: 0, t: 0, rest: 377, hover: 620 },
+        y: { c: 0, t: 0, rest: 531, hover: 560 },
+      },
     ];
 
     basePolygon.forEach((p) => {
@@ -150,18 +173,29 @@ export default class CanvasManager {
     this.t = time * 0.001;
     this.mouse.x.c += (this.mouse.x.t - this.mouse.x.c) * 0.08;
     this.mouse.y.c += (this.mouse.y.t - this.mouse.y.c) * 0.08;
-    this.mouse.delta.t = Math.sqrt(Math.pow(this.mouse.x.t - this.mouse.x.c, 2) + Math.pow(this.mouse.y.t - this.mouse.y.c, 2));
+    this.mouse.delta.t = Math.sqrt(
+      Math.pow(this.mouse.x.t - this.mouse.x.c, 2) +
+        Math.pow(this.mouse.y.t - this.mouse.y.c, 2)
+    );
     this.mouse.delta.c += (this.mouse.delta.t - this.mouse.delta.c) * 0.08;
     this.polygonHover.c += (this.polygonHover.t - this.polygonHover.c) * 0.08;
 
     if (this.activeTrail) {
       this.activeTrail.push({ x: this.mouse.x.c, y: this.mouse.y.c });
-      if (this.activeTrail.length > this.maxTrailLength) this.activeTrail.shift();
+      if (this.activeTrail.length > this.maxTrailLength)
+        this.activeTrail.shift();
     }
-    this.trails.forEach((trail) => {
-      if(this.activeTrail === trail) return;
-      trail.shift();
-    });
+
+    // Use frozen trails if we're in freeze state
+    const trailsToRender = this.frozenTrails || this.trails;
+
+    // Only shift trails if we're not recording and not frozen
+    if (!this.isRecording() && !this.frozenTrails) {
+      this.trails.forEach((trail) => {
+        if (this.activeTrail === trail) return;
+        trail.shift();
+      });
+    }
 
     this.trails = this.trails.filter((trail) => trail && trail.length > 0);
 
@@ -173,15 +207,19 @@ export default class CanvasManager {
     requestAnimationFrame(this.render);
   }
   mousedown(e) {
-    if(this.mouseupTO) clearTimeout(this.mouseupTO);
+    if (this.mouseupTO) clearTimeout(this.mouseupTO);
     const newTrail = [];
     this.trails.push(newTrail);
     this.activeTrail = newTrail;
   }
   mouseup() {
-    if(this.mouseupTO) clearTimeout(this.mouseupTO);
+    if (this.mouseupTO) clearTimeout(this.mouseupTO);
     this.mouseupTO = setTimeout(() => {
       this.activeTrail = null;
+      // If we were recording and this was the last stroke, freeze the drawing
+      if (this.isRecording() && this.trails.length > 0) {
+        this.frozenTrails = [...this.trails];
+      }
     }, 300);
   }
   mousemove(e) {
@@ -189,7 +227,11 @@ export default class CanvasManager {
     if (this.activeTrail) {
       this.signatureCapture.recordPoint(e.clientX, e.clientY);
     }
-    const isHover = this.inPolygon(e.clientX, e.clientY, this.polygon.map((p) => [p.x.c, p.y.c]));
+    const isHover = this.inPolygon(
+      e.clientX,
+      e.clientY,
+      this.polygon.map((p) => [p.x.c, p.y.c])
+    );
     this.polygon.forEach((p) => {
       if (isHover) {
         p.x.t = p.x.hover;
@@ -206,12 +248,48 @@ export default class CanvasManager {
   inPolygon(x, y, polygon) {
     let inside = false;
     for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-      const xi = polygon[i][0], yi = polygon[i][1];
-      const xj = polygon[j][0], yj = polygon[j][1];
-      const intersect = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+      const xi = polygon[i][0],
+        yi = polygon[i][1];
+      const xj = polygon[j][0],
+        yj = polygon[j][1];
+      const intersect =
+        yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
       if (intersect) inside = !inside;
     }
     return inside;
   }
-  
+
+  isRecording() {
+    return this.signatureCapture.isRecording;
+  }
+
+  startFadeOut() {
+    this.fadeOutStartTime = Date.now();
+    this.fadeOutAnimation();
+  }
+
+  fadeOutAnimation() {
+    if (!this.fadeOutStartTime) return;
+
+    const elapsed = Date.now() - this.fadeOutStartTime;
+    const progress = Math.min(elapsed / this.fadeOutDuration, 1);
+
+    // Apply fade out effect to trails
+    this.trails = this.trails.map((trail) => ({
+      ...trail,
+      opacity: 1 - progress,
+    }));
+
+    if (progress < 1) {
+      requestAnimationFrame(() => this.fadeOutAnimation());
+    } else {
+      this.trails = [];
+      this.cancelFreeze();
+    }
+  }
+
+  cancelFreeze() {
+    this.frozenTrails = null;
+    this.fadeOutStartTime = null;
+  }
 }

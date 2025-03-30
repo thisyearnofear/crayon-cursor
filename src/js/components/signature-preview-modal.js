@@ -6,8 +6,8 @@ export class SignaturePreviewModal {
 
   createModal() {
     // Create modal container
-    this.modal = document.createElement('div');
-    this.modal.className = 'signature-preview-modal';
+    this.modal = document.createElement("div");
+    this.modal.className = "signature-preview-modal";
     this.modal.style.cssText = `
       display: none;
       position: fixed;
@@ -25,8 +25,8 @@ export class SignaturePreviewModal {
     `;
 
     // Create overlay
-    this.overlay = document.createElement('div');
-    this.overlay.className = 'signature-preview-overlay';
+    this.overlay = document.createElement("div");
+    this.overlay.className = "signature-preview-overlay";
     this.overlay.style.cssText = `
       display: none;
       position: fixed;
@@ -39,8 +39,8 @@ export class SignaturePreviewModal {
     `;
 
     // Create content
-    this.content = document.createElement('div');
-    this.content.className = 'signature-preview-content';
+    this.content = document.createElement("div");
+    this.content.className = "signature-preview-content";
     this.content.style.cssText = `
       display: flex;
       flex-direction: column;
@@ -49,7 +49,7 @@ export class SignaturePreviewModal {
     `;
 
     // Create preview image
-    this.previewImage = document.createElement('img');
+    this.previewImage = document.createElement("img");
     this.previewImage.style.cssText = `
       max-width: 100%;
       max-height: 60vh;
@@ -57,7 +57,7 @@ export class SignaturePreviewModal {
     `;
 
     // Create buttons container
-    this.buttons = document.createElement('div');
+    this.buttons = document.createElement("div");
     this.buttons.style.cssText = `
       display: flex;
       gap: 10px;
@@ -65,23 +65,36 @@ export class SignaturePreviewModal {
     `;
 
     // Create save button
-    this.saveButton = document.createElement('button');
-    this.saveButton.textContent = 'Save to Grove';
-    this.saveButton.className = 'signature-button';
-
-    // Create upscale button
-    this.upscaleButton = document.createElement('button');
-    this.upscaleButton.textContent = 'Upscale (2x)';
-    this.upscaleButton.className = 'signature-button';
+    this.saveButton = document.createElement("button");
+    this.saveButton.textContent = "Save to Grove";
+    this.saveButton.className = "signature-button";
+    this.saveButton.style.cssText = `
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    `;
 
     // Create cancel button
-    this.cancelButton = document.createElement('button');
-    this.cancelButton.textContent = 'Cancel';
-    this.cancelButton.className = 'signature-button';
+    this.cancelButton = document.createElement("button");
+    this.cancelButton.textContent = "Cancel";
+    this.cancelButton.className = "signature-button";
+    this.cancelButton.style.cssText = `
+      background-color: #f44336;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    `;
 
     // Add loading indicator
-    this.loadingIndicator = document.createElement('div');
-    this.loadingIndicator.className = 'loading-indicator';
+    this.loadingIndicator = document.createElement("div");
+    this.loadingIndicator.className = "loading-indicator";
     this.loadingIndicator.style.cssText = `
       display: none;
       text-align: center;
@@ -89,10 +102,9 @@ export class SignaturePreviewModal {
       font-style: italic;
       color: #666;
     `;
-    this.loadingIndicator.textContent = 'Processing...';
+    this.loadingIndicator.textContent = "Processing...";
 
     // Assemble modal
-    this.buttons.appendChild(this.upscaleButton);
     this.buttons.appendChild(this.saveButton);
     this.buttons.appendChild(this.cancelButton);
     this.content.appendChild(this.previewImage);
@@ -105,77 +117,14 @@ export class SignaturePreviewModal {
     document.body.appendChild(this.modal);
 
     // Close on overlay click
-    this.overlay.addEventListener('click', () => this.hide());
-    this.cancelButton.addEventListener('click', () => this.hide());
-  }
-
-  async upscaleImage(imageDataUrl) {
-    this.loadingIndicator.style.display = 'block';
-    this.buttons.style.display = 'none';
-
-    try {
-      // Convert data URL to blob
-      const base64Data = imageDataUrl.split(',')[1];
-      const binaryStr = atob(base64Data);
-      const byteNumbers = new Array(binaryStr.length);
-      for (let i = 0; i < binaryStr.length; i++) {
-          byteNumbers[i] = binaryStr.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const imageBlob = new Blob([byteArray], { type: 'image/png' });
-
-      // Create form data
-      const formData = new FormData();
-      formData.append('image', imageBlob, 'signature.png');
-      formData.append('scale', JSON.stringify([2]));
-
-      // Call Venice API
-      const response = await fetch('https://api.venice.ai/api/v1/image/upscale', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.VENICE_API_KEY}`
-        },
-        body: formData
-      });
-
-      if (!response.ok) {
-        throw new Error(`Upscale failed: ${response.statusText}`);
-      }
-
-      // Convert response to data URL
-      const upscaledBlob = await response.blob();
-      const reader = new FileReader();
-      return new Promise((resolve, reject) => {
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(upscaledBlob);
-      });
-    } finally {
-      this.loadingIndicator.style.display = 'none';
-      this.buttons.style.display = 'flex';
-    }
+    this.overlay.addEventListener("click", () => this.hide());
+    this.cancelButton.addEventListener("click", () => this.hide());
   }
 
   show(imageDataUrl, onSave) {
     this.previewImage.src = imageDataUrl;
-    this.modal.style.display = 'block';
-    this.overlay.style.display = 'block';
-
-    // Setup upscale handler
-    this.upscaleButton.onclick = async () => {
-      try {
-        const upscaledImageUrl = await this.upscaleImage(imageDataUrl);
-        this.previewImage.src = upscaledImageUrl;
-        // Update the save handler to use upscaled image
-        this.saveButton.onclick = () => {
-          this.hide();
-          onSave(upscaledImageUrl);
-        };
-      } catch (error) {
-        console.error('Failed to upscale:', error);
-        alert('Failed to upscale image. Please try again.');
-      }
-    };
+    this.modal.style.display = "block";
+    this.overlay.style.display = "block";
 
     // Setup save handler
     this.saveButton.onclick = () => {
@@ -185,7 +134,7 @@ export class SignaturePreviewModal {
   }
 
   hide() {
-    this.modal.style.display = 'none';
-    this.overlay.style.display = 'none';
+    this.modal.style.display = "none";
+    this.overlay.style.display = "none";
   }
 }
