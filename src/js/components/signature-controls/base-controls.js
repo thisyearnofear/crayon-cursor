@@ -1,5 +1,6 @@
 import { SignaturePreviewModal } from "../signature-preview-modal.js";
 import { WalletManager } from "../../wallet-manager.js";
+import { ModeToggle } from "../mode-toggle.js";
 
 export class BaseSignatureControls {
   constructor(canvasManager) {
@@ -9,6 +10,7 @@ export class BaseSignatureControls {
     this.timerInterval = null;
     this.previewModal = new SignaturePreviewModal();
     this.walletManager = new WalletManager();
+    this.modeToggle = new ModeToggle(canvasManager);
     this.countdown = 10;
     this.postRecordingDuration = 10000; // 10 seconds
   }

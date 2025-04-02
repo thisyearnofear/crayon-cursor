@@ -20,6 +20,7 @@ export default class CanvasManager {
     this.frozenTrails = null;
     this.fadeOutDuration = 2000; // 2 seconds fade out
     this.fadeOutStartTime = null;
+    this.currentMode = "signature";
 
     this.t = 0;
     this.el = document.getElementById("canvas-container");
@@ -33,6 +34,7 @@ export default class CanvasManager {
     this.mouseup = this.mouseup.bind(this);
     this.startFadeOut = this.startFadeOut.bind(this);
     this.cancelFreeze = this.cancelFreeze.bind(this);
+    this.cleanup = this.cleanup.bind(this);
 
     window.addEventListener("resize", this.resize);
     document.addEventListener("mousedown", this.mousedown);
@@ -43,6 +45,25 @@ export default class CanvasManager {
     this.initCanvas();
   }
 
+  cleanup() {
+    // Remove event listeners
+    window.removeEventListener("resize", this.resize);
+    document.removeEventListener("mousedown", this.mousedown);
+    document.removeEventListener("mousemove", this.mousemove);
+    document.removeEventListener("mouseup", this.mouseup);
+
+    // Remove p5 instance
+    if (this.p5Instance) {
+      this.p5Instance.remove();
+      this.p5Instance = null;
+    }
+
+    // Clear trails
+    this.trails = [];
+    this.activeTrail = null;
+    this.frozenTrails = null;
+  }
+
   resize() {
     this.width = window.innerWidth;
     this.height = window.innerHeight;
@@ -50,8 +71,18 @@ export default class CanvasManager {
     if (this.app) this.app.resizeCanvas(this.width, this.height, true);
   }
   initCanvas() {
+    // Clean up existing instance if any
+    this.cleanup();
+
+    // Re-add event listeners
+    window.addEventListener("resize", this.resize);
+    document.addEventListener("mousedown", this.mousedown);
+    document.addEventListener("mousemove", this.mousemove);
+    document.addEventListener("mouseup", this.mouseup);
+
+    // Create new p5 instance
     this.app = new p5(this.sketch, this.el);
-    this.p5Instance = this.app; // Store p5 instance
+    this.p5Instance = this.app;
     requestAnimationFrame(this.render);
   }
   initBrush(p) {
