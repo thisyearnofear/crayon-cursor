@@ -29,14 +29,43 @@ export default class CanvasManager {
     this.mousemove = this.mousemove.bind(this);
     this.mousedown = this.mousedown.bind(this);
     this.mouseup = this.mouseup.bind(this);
+    this.touchstart = this.touchstart.bind(this);
+    this.touchmove = this.touchmove.bind(this);
+    this.touchend = this.touchend.bind(this);
 
     window.addEventListener('resize', this.resize);
     document.addEventListener('mousedown', this.mousedown);
     document.addEventListener('mousemove', this.mousemove);
     document.addEventListener('mouseup', this.mouseup);
 
+    // Touch events for mobile
+    this.el.addEventListener('touchstart', this.touchstart, { passive: false });
+    this.el.addEventListener('touchmove', this.touchmove, { passive: false });
+    this.el.addEventListener('touchend', this.touchend, { passive: false });
+
     this.resize();
     this.initCanvas();
+  }
+
+  touchstart(e) {
+    if (e.touches.length > 0) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      this.mousedown({ clientX: touch.clientX, clientY: touch.clientY });
+    }
+  }
+
+  touchmove(e) {
+    if (e.touches.length > 0) {
+      e.preventDefault();
+      const touch = e.touches[0];
+      this.mousemove({ clientX: touch.clientX, clientY: touch.clientY });
+    }
+  }
+
+  touchend(e) {
+    e.preventDefault();
+    this.mouseup();
   }
 
   resize() {
