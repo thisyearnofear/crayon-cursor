@@ -1,0 +1,76 @@
+// wallet.scss
+#wallet-ui {
+  display: flex;
+  align-items: center;
+  gap: 10rem;
+  position: absolute;
+  top: 30rem;
+  right: 30rem;
+  z-index: 10;
+  background: rgba(255,255,255,0.92);
+  border-radius: 12rem;
+  box-shadow: 0 2rem 12rem 0 rgba(0,0,0,0.08);
+  padding: 9rem 18rem;
+  font-family: inherit;
+  font-size: 12rem;
+  transition: box-shadow 0.2s;
+
+  button {
+    background: var(--accent, #1a73e8);
+    color: #fff;
+    border: none;
+    border-radius: 8rem;
+    padding: 6rem 15rem;
+    font-size: 12rem;
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: 0 1rem 4rem 0 rgba(0,0,0,0.09);
+    transition: background 0.2s, box-shadow 0.2s;
+    &:hover {
+      background: var(--accent-hover, #1760c4);
+      box-shadow: 0 2rem 8rem 0 rgba(0,0,0,0.13);
+    }
+    &:disabled {
+      background: #ccc;
+      color: #888;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+  }
+
+  #wallet-status {
+    font-size: 11rem;
+    color: #222;
+    min-width: 90rem;
+    text-align: right;
+    letter-spacing: 0.01em;
+    font-weight: 500;
+  }
+}
+
+@media (max-width: 600px) {
+  #wallet-ui {
+    top: 10rem;
+    right: 10rem;
+    padding: 6rem 10rem;
+    font-size: 10rem;
+    button {
+      font-size: 10rem;
+      padding: 5rem 8rem;
+    }
+  }
+}
+
+
+@media (max-width: 600px) {
+  #wallet-ui {
+    top: 1em;
+    right: 1em;
+    padding: 0.5em 0.8em;
+    font-size: 0.93rem;
+    button {
+      font-size: 0.93rem;
+      padding: 0.4em 0.7em;
+    }
+  }
+}

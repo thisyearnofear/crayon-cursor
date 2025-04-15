@@ -38,36 +38,37 @@ export class SignatureControls {
     style.textContent = `
       .signature-controls {
         position: fixed;
-        top: 20px;
-        right: 20px;
-        background: rgba(255, 255, 255, 0.9);
-        padding: 15px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        z-index: 1000;
+        top: 90rem;
+        right: 30rem;
+        background: rgba(255, 255, 255, 0.92);
+        padding: 10rem 16rem;
+        border-radius: 7rem;
+        box-shadow: 0 2rem 8rem rgba(0, 0, 0, 0.07);
+        z-index: 9;
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 7rem;
+        font-size: 11rem;
+        min-width: 220rem;
       }
       .signature-controls .timer {
         margin-bottom: 5px;
         color: #7A200C;
       }
       .signature-controls .hint {
-        font-size: 12px;
+        font-size: 10rem;
         text-align: center;
-        margin-bottom: 10px;
+        margin-bottom: 7rem;
         color: #666;
-        font-size: 24px;
-        text-align: center;
         font-family: monospace;
       }
       .signature-controls button {
-        padding: 8px 16px;
+        padding: 7rem 13rem;
         border: none;
-        border-radius: 4px;
+        border-radius: 6rem;
         cursor: pointer;
         font-weight: 500;
+        font-size: 11rem;
         transition: background-color 0.2s;
       }
       .signature-controls .start-btn {
