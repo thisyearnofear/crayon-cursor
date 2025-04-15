@@ -29,46 +29,74 @@ export default class CanvasManager {
     this.mousemove = this.mousemove.bind(this);
     this.mousedown = this.mousedown.bind(this);
     this.mouseup = this.mouseup.bind(this);
-    this.touchstart = this.touchstart.bind(this);
-    this.touchmove = this.touchmove.bind(this);
-    this.touchend = this.touchend.bind(this);
 
     window.addEventListener('resize', this.resize);
     document.addEventListener('mousedown', this.mousedown);
     document.addEventListener('mousemove', this.mousemove);
     document.addEventListener('mouseup', this.mouseup);
 
-    // Touch events for mobile
-    this.el.addEventListener('touchstart', this.touchstart, { passive: false });
-    this.el.addEventListener('touchmove', this.touchmove, { passive: false });
-    this.el.addEventListener('touchend', this.touchend, { passive: false });
+    this.createMobileCursor();
 
     this.resize();
     this.initCanvas();
-    this.touchBuffer = [];
   }
 
-  touchstart(e) {
-    if (e.touches.length > 0) {
-      e.preventDefault();
-      const touch = e.touches[0];
-      this.mousedown({ clientX: touch.clientX, clientY: touch.clientY });
-    }
-  }
+  createMobileCursor() {
+    if (!/Mobi|Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent)) return;
+    // Create cursor dot
+    this.mobileCursor = document.createElement('div');
+    this.mobileCursor.style.position = 'absolute';
+    this.mobileCursor.style.width = '32px';
+    this.mobileCursor.style.height = '32px';
+    this.mobileCursor.style.borderRadius = '50%';
+    this.mobileCursor.style.background = 'rgba(252,14,73,0.82)';
+    this.mobileCursor.style.border = '2px solid #7A200C';
+    this.mobileCursor.style.boxShadow = '0 2px 8px rgba(0,0,0,0.07)';
+    this.mobileCursor.style.zIndex = '1000';
+    this.mobileCursor.style.touchAction = 'none';
+    this.mobileCursor.style.left = (this.width/2-16)+ 'px';
+    this.mobileCursor.style.top = (this.height/2-16)+ 'px';
+    this.el.appendChild(this.mobileCursor);
 
-  touchmove(e) {
-    if (e.touches.length > 0) {
-      e.preventDefault();
-      const touch = e.touches[0];
-      this.mousemove({ clientX: touch.clientX, clientY: touch.clientY });
-      this.touchBuffer.push({ x: touch.clientX, y: touch.clientY });
-    }
-  }
-
-  touchend(e) {
-    e.preventDefault();
-    this.mouseup();
-    this.touchBuffer = [];
+    let dragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
+    const moveCursor = (clientX, clientY) => {
+      const rect = this.el.getBoundingClientRect();
+      let x = clientX - rect.left;
+      let y = clientY - rect.top;
+      // Clamp to canvas
+      x = Math.max(0, Math.min(this.width, x));
+      y = Math.max(0, Math.min(this.height, y));
+      this.mobileCursor.style.left = (x - 16) + 'px';
+      this.mobileCursor.style.top = (y - 16) + 'px';
+      // Simulate mousemove for drawing
+      this.mousemove({ clientX: x, clientY: y });
+    };
+    this.mobileCursor.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        dragging = true;
+        const touch = e.touches[0];
+        // Simulate mousedown
+        this.mousedown({ clientX: touch.clientX - this.el.getBoundingClientRect().left, clientY: touch.clientY - this.el.getBoundingClientRect().top });
+        moveCursor(touch.clientX, touch.clientY);
+        e.preventDefault();
+      }
+    }, { passive: false });
+    window.addEventListener('touchmove', (e) => {
+      if (dragging && e.touches.length === 1) {
+        const touch = e.touches[0];
+        moveCursor(touch.clientX, touch.clientY);
+        e.preventDefault();
+      }
+    }, { passive: false });
+    window.addEventListener('touchend', (e) => {
+      if (dragging) {
+        dragging = false;
+        this.mouseup();
+        e.preventDefault();
+      }
+    }, { passive: false });
   }
 
   resize() {
@@ -85,16 +113,13 @@ export default class CanvasManager {
   initBrush(p) {
     brush.instance(p);
     p.setup = () => {
-      // Optimize for mobile
-      const isMobile = /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile/i.test(navigator.userAgent);
-      const pixelDensity = isMobile ? Math.min(window.devicePixelRatio || 1, 2) : (window.devicePixelRatio || 1);
+      const pixelDensity = window.devicePixelRatio || 1;
       p.pixelDensity(pixelDensity);
       p.createCanvas(this.width, this.height, p.WEBGL);
       p.angleMode(p.DEGREES);
       brush.noField();
       brush.set('2B');
-      brush.scaleBrushes(isMobile ? 3.5 : (window.innerWidth <= 1024 ? 2.5 : 0.9));
-      p.frameRate(isMobile ? 24 : 30);
+      brush.scaleBrushes(window.innerWidth <= 1024 ? 2.5 : 0.9);
     };
   }
   captureCanvas() {
@@ -122,6 +147,7 @@ export default class CanvasManager {
   sketch(p) {
     this.initBrush(p);
     p.draw = () => {
+      p.frameRate(30);
       p.translate(-this.width / 2, -this.height / 2);
       p.background('#FC0E49');
 
@@ -141,14 +167,7 @@ export default class CanvasManager {
       brush.strokeWeight(1 + 0.005 * this.mouse.delta.c);
       this.trails.forEach((trail) => {
         if (trail.length > 0) {
-          // Use Catmull-Rom spline for mobile touch trails
-          const isMobile = /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile/i.test(navigator.userAgent);
-          if (isMobile && trail.length > 3) {
-            const smoothTrail = this.catmullRomSpline(trail, 8);
-            brush.spline(smoothTrail, 1);
-          } else {
-            brush.spline(trail.map((t) => [t.x, t.y]), 1);
-          }
+          brush.spline(trail.map((t) => [t.x, t.y]), 1);
         }
       });
 
