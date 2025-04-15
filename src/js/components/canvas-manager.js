@@ -83,14 +83,14 @@ export default class CanvasManager {
         e.preventDefault();
       }
     }, { passive: false });
-    window.addEventListener('touchmove', (e) => {
+    this.mobileCursor.addEventListener('touchmove', (e) => {
       if (dragging && e.touches.length === 1) {
         const touch = e.touches[0];
         moveCursor(touch.clientX, touch.clientY);
         e.preventDefault();
       }
     }, { passive: false });
-    window.addEventListener('touchend', (e) => {
+    this.mobileCursor.addEventListener('touchend', (e) => {
       if (dragging) {
         dragging = false;
         this.mouseup();
