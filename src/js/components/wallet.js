@@ -84,15 +84,6 @@ class Wallet {
     return this.account;
   }
 
-  // Mint stub: replace with actual contract logic
-  async mint(metadataUrl) {
-    if (!this.signer) throw new Error('Wallet not connected');
-    // TODO: Replace with actual contract interaction
-    alert('Minting with metadata: ' + metadataUrl);
-    // Example:
-    // const tx = await contract.mint(metadataUrl);
-    // await tx.wait();
-  }
 }
 
 const wallet = new Wallet();

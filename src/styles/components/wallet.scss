@@ -3,6 +3,9 @@
   display: flex;
   align-items: center;
   gap: 10rem;
+  &.disconnected {
+    gap: 0;
+  }
   position: absolute;
   top: 30rem;
   right: 30rem;
@@ -45,6 +48,25 @@
     text-align: right;
     letter-spacing: 0.01em;
     font-weight: 500;
+  }
+}
+
+.wallet-disconnect-btn {
+  margin-left: 10px;
+  font-size: 11rem;
+  padding: 2rem 12rem;
+  background: #7A200C;
+  color: #fff;
+  border-radius: 6rem;
+  border: 2px solid #FC0E49;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s, color 0.2s, border 0.2s;
+  box-shadow: 0 1rem 4rem 0 rgba(0,0,0,0.10);
+  &:hover {
+    background: #FC0E49;
+    color: #fff;
+    border-color: #7A200C;
   }
 }
 

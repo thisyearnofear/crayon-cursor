@@ -26,7 +26,7 @@ export default class Index {
     walletDiv.id = 'wallet-ui';
     walletDiv.innerHTML = `
       <button id="wallet-connect">Connect Wallet</button>
-      <span id="wallet-status"></span>
+      <span id="wallet-status" style="display:none;"></span>
       <span id="wallet-profile" style="display:none;"></span>
     `;
     document.body.appendChild(walletDiv);
@@ -38,17 +38,35 @@ export default class Index {
     };
     function updateProfileUI({ ensName, avatar, account }) {
       if (ensName || account) {
+        walletDiv.classList.remove('disconnected');
         connectBtn.style.display = 'none';
         statusSpan.style.display = 'none';
         profileSpan.style.display = '';
         profileSpan.innerHTML = `
           ${avatar ? `<img src="${avatar}" class="wallet-avatar" style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:6px;">` : ''}
           <span style="vertical-align:middle;font-weight:600;">${ensName ? ensName : account.slice(0,6)+'...'+account.slice(-4)}</span>
+          <button id="wallet-disconnect" class="wallet-disconnect-btn">Disconnect</button>
         `;
+        // Add disconnect handler
+        setTimeout(() => {
+          const disconnectBtn = document.getElementById('wallet-disconnect');
+          if (disconnectBtn) {
+            disconnectBtn.onclick = () => {
+              if (window.ethereum && window.ethereum.isMetaMask) {
+                // MetaMask does not support programmatic disconnect, so just clear UI
+                wallet.account = null;
+                wallet.ensName = null;
+                wallet.avatar = null;
+                wallet._notify();
+              }
+            };
+          }
+        }, 0);
       } else {
         connectBtn.style.display = '';
         statusSpan.style.display = 'none';
         profileSpan.style.display = 'none';
+        walletDiv.classList.add('disconnected');
       }
     }
     wallet.onProfileChange(updateProfileUI);
