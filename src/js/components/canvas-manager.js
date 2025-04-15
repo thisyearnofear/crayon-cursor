@@ -85,13 +85,16 @@ export default class CanvasManager {
   initBrush(p) {
     brush.instance(p);
     p.setup = () => {
-      const pixelDensity = window.devicePixelRatio || 1;
+      // Optimize for mobile
+      const isMobile = /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile/i.test(navigator.userAgent);
+      const pixelDensity = isMobile ? Math.min(window.devicePixelRatio || 1, 2) : (window.devicePixelRatio || 1);
       p.pixelDensity(pixelDensity);
       p.createCanvas(this.width, this.height, p.WEBGL);
       p.angleMode(p.DEGREES);
       brush.noField();
       brush.set('2B');
-      brush.scaleBrushes(window.innerWidth <= 1024 ? 2.5 : 0.9);
+      brush.scaleBrushes(isMobile ? 3.5 : (window.innerWidth <= 1024 ? 2.5 : 0.9));
+      p.frameRate(isMobile ? 24 : 30);
     };
   }
   captureCanvas() {
@@ -119,7 +122,6 @@ export default class CanvasManager {
   sketch(p) {
     this.initBrush(p);
     p.draw = () => {
-      p.frameRate(30);
       p.translate(-this.width / 2, -this.height / 2);
       p.background('#FC0E49');
 
@@ -139,7 +141,14 @@ export default class CanvasManager {
       brush.strokeWeight(1 + 0.005 * this.mouse.delta.c);
       this.trails.forEach((trail) => {
         if (trail.length > 0) {
-          brush.spline(trail.map((t) => [t.x, t.y]), 1);
+          // Use Catmull-Rom spline for mobile touch trails
+          const isMobile = /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile/i.test(navigator.userAgent);
+          if (isMobile && trail.length > 3) {
+            const smoothTrail = this.catmullRomSpline(trail, 8);
+            brush.spline(smoothTrail, 1);
+          } else {
+            brush.spline(trail.map((t) => [t.x, t.y]), 1);
+          }
         }
       });
 
