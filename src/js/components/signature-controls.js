@@ -175,17 +175,14 @@ export class SignatureControls {
     this.isRecording = true;
     this.startBtn.textContent = 'Stop';
     this.saveBtn.disabled = true;
-    
+    this.canvasManager.setTrailFadePaused(true);
     this.canvasManager.signatureCapture.startRecording();
-    
     // Start timer
     let timeLeft = 10;
     this.updateTimer(timeLeft);
-    
     this.timerInterval = setInterval(() => {
       timeLeft = Math.floor(this.canvasManager.signatureCapture.getRemainingTime() / 1000);
       this.updateTimer(timeLeft);
-      
       if (timeLeft <= 0) {
         this.stopRecording();
       }
@@ -196,9 +193,21 @@ export class SignatureControls {
     this.isRecording = false;
     this.startBtn.textContent = 'Start';
     this.saveBtn.disabled = false;
-    
     clearInterval(this.timerInterval);
     this.canvasManager.signatureCapture.stopRecording();
+    // Start grace period: keep trail visible for 10s
+    let grace = 0;
+    this.updateTimer(grace);
+    this.canvasManager.setTrailFadePaused(true);
+    this.timerInterval = setInterval(() => {
+      grace++;
+      this.updateTimer(grace);
+      if (grace >= 10) {
+        clearInterval(this.timerInterval);
+        this.canvasManager.setTrailFadePaused(false);
+        this.updateTimer(10);
+      }
+    }, 1000);
   }
 
   updateTimer(seconds) {

@@ -156,8 +156,10 @@ export class SignaturePreviewModal {
     }
   }
 
-  show(imageDataUrl, onSave, onMint) {
-    this.previewImage.src = imageDataUrl;
+  async show(imageDataUrl, onSave, onMint) {
+    // Crop bottom third for preview
+    const croppedDataUrl = await this.cropBottomThird(imageDataUrl);
+    this.previewImage.src = croppedDataUrl;
     this.modal.style.display = 'block';
     this.overlay.style.display = 'block';
 
@@ -171,6 +173,23 @@ export class SignaturePreviewModal {
       this.hide();
       if (onMint) onMint(imageDataUrl);
     };
+  }
+
+  // Crop bottom third off for preview
+  async cropBottomThird(imageDataUrl) {
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      img.onload = function() {
+        const cropHeight = Math.floor(img.height * 2 / 3);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = cropHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, img.width, cropHeight, 0, 0, img.width, cropHeight);
+        resolve(canvas.toDataURL());
+      };
+      img.src = imageDataUrl;
+    });
   }
 
   hide() {

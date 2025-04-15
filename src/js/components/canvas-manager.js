@@ -3,6 +3,7 @@ import p5 from 'p5';
 import { SignatureCapture } from '../signature-capture.js';
 
 export default class CanvasManager {
+  pauseTrailFade = false;
   constructor() {
     this.p5Instance = null;
     this.signatureCapture = new SignatureCapture();
@@ -158,11 +159,12 @@ export default class CanvasManager {
       this.activeTrail.push({ x: this.mouse.x.c, y: this.mouse.y.c });
       if (this.activeTrail.length > this.maxTrailLength) this.activeTrail.shift();
     }
-    this.trails.forEach((trail) => {
-      if(this.activeTrail === trail) return;
-      trail.shift();
-    });
-
+    if (!this.pauseTrailFade) {
+      this.trails.forEach((trail) => {
+        if(this.activeTrail === trail) return;
+        trail.shift();
+      });
+    }
     this.trails = this.trails.filter((trail) => trail && trail.length > 0);
 
     this.polygon.forEach((p, i) => {
@@ -171,6 +173,10 @@ export default class CanvasManager {
     });
 
     requestAnimationFrame(this.render);
+  }
+
+  setTrailFadePaused(paused) {
+    this.pauseTrailFade = paused;
   }
   mousedown(e) {
     if(this.mouseupTO) clearTimeout(this.mouseupTO);
