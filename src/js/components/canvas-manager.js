@@ -45,6 +45,7 @@ export default class CanvasManager {
 
     this.resize();
     this.initCanvas();
+    this.touchBuffer = [];
   }
 
   touchstart(e) {
@@ -60,12 +61,14 @@ export default class CanvasManager {
       e.preventDefault();
       const touch = e.touches[0];
       this.mousemove({ clientX: touch.clientX, clientY: touch.clientY });
+      this.touchBuffer.push({ x: touch.clientX, y: touch.clientY });
     }
   }
 
   touchend(e) {
     e.preventDefault();
     this.mouseup();
+    this.touchBuffer = [];
   }
 
   resize() {
@@ -184,7 +187,24 @@ export default class CanvasManager {
     this.mouse.delta.c += (this.mouse.delta.t - this.mouse.delta.c) * 0.08;
     this.polygonHover.c += (this.polygonHover.t - this.polygonHover.c) * 0.08;
 
-    if (this.activeTrail) {
+    // Smooth touch interpolation for active trail
+    if (this.activeTrail && this.touchBuffer && this.touchBuffer.length > 1) {
+      for (let i = 1; i < this.touchBuffer.length; i++) {
+        const prev = this.touchBuffer[i - 1];
+        const curr = this.touchBuffer[i];
+        // Interpolate points between prev and curr
+        const steps = Math.max(2, Math.floor(Math.hypot(curr.x - prev.x, curr.y - prev.y) / 2));
+        for (let s = 1; s <= steps; s++) {
+          const t = s / steps;
+          const x = prev.x + (curr.x - prev.x) * t;
+          const y = prev.y + (curr.y - prev.y) * t;
+          this.activeTrail.push({ x, y });
+          if (this.activeTrail.length > this.maxTrailLength) this.activeTrail.shift();
+        }
+      }
+      // Keep only the last point in buffer for next frame
+      this.touchBuffer = [this.touchBuffer[this.touchBuffer.length - 1]];
+    } else if (this.activeTrail) {
       this.activeTrail.push({ x: this.mouse.x.c, y: this.mouse.y.c });
       if (this.activeTrail.length > this.maxTrailLength) this.activeTrail.shift();
     }
