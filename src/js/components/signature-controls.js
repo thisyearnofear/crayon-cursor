@@ -1,4 +1,5 @@
 import { SignaturePreviewModal } from './signature-preview-modal.js';
+import wallet from './wallet';
 
 export class SignatureControls {
   constructor(canvasManager) {
@@ -29,27 +30,32 @@ export class SignatureControls {
     container.innerHTML = `
       <div class="timer">00:10</div>
       <div class="hint">Press 'R' to start/stop recording</div>
-      <button class="start-btn">Start Recording</button>
-      <button class="save-btn" disabled>Save Signature</button>
+      <button class="start-btn">Start</button>
+      <button class="save-btn" disabled>Save</button>
     `;
 
     // Add styles
     const style = document.createElement('style');
     style.textContent = `
       .signature-controls {
-        position: fixed;
-        top: 90rem;
-        right: 30rem;
+        position: static;
+        margin: 0 auto;
         background: rgba(255, 255, 255, 0.92);
-        padding: 10rem 16rem;
-        border-radius: 7rem;
-        box-shadow: 0 2rem 8rem rgba(0, 0, 0, 0.07);
-        z-index: 9;
+        border-radius: 12rem;
+        box-shadow: 0 2rem 12rem 0 rgba(0,0,0,0.08);
+        padding: 13rem 22rem;
         display: flex;
-        flex-direction: column;
-        gap: 7rem;
-        font-size: 11rem;
-        min-width: 220rem;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 16rem;
+        z-index: 10;
+        font-family: inherit;
+        font-size: 13rem;
+        transition: box-shadow 0.2s;
+        width: 100%;
+        min-width: 260rem;
+        max-width: 420rem;
       }
       .signature-controls .timer {
         margin-bottom: 5px;
@@ -93,8 +99,12 @@ export class SignatureControls {
     document.head.appendChild(style);
 
     // Add to DOM
-    document.body.appendChild(container);
-    
+    const anchor = document.getElementById('signature-controls-anchor');
+    if (anchor) {
+      anchor.appendChild(container);
+    } else {
+      document.body.appendChild(container);
+    }
     // Store references
     this.container = container;
     this.timerEl = container.querySelector('.timer');
@@ -123,28 +133,39 @@ export class SignatureControls {
         }
 
         // Show preview modal
-        this.previewModal.show(imageDataUrl, async (finalImageUrl) => {
-          try {
-            this.saveBtn.textContent = 'Saving to Grove...';
-            const result = await this.canvasManager.signatureCapture.saveToGrove(this.canvasManager, finalImageUrl);
-            console.log('Signature saved:', result);
-            alert('Signature uploaded!\n\nDirect URL:\n' + result.imageUrl + '\n\nLens URI:\n' + result.uri);
-          } catch (error) {
-            console.error('Failed to save to Grove:', error);
-            alert('Failed to save signature to Grove. Please try again.');
-          } finally {
-            this.saveBtn.textContent = 'Save Signature';
-            this.saveBtn.disabled = true;
+        this.previewModal.show(
+          imageDataUrl,
+          async (finalImageUrl) => {
+            try {
+              this.saveBtn.textContent = 'Saving to Grove...';
+              const result = await this.canvasManager.signatureCapture.saveToGrove(this.canvasManager, finalImageUrl);
+              console.log('Signature saved:', result);
+              alert('Signature uploaded!\n\nDirect URL:\n' + result.imageUrl + '\n\nLens URI:\n' + result.uri);
+            } catch (error) {
+              console.error('Failed to save to Grove:', error);
+              alert('Failed to save signature to Grove. Please try again.');
+            } finally {
+              this.saveBtn.textContent = 'Save';
+              this.saveBtn.disabled = true;
+            }
+          },
+          async (mintImageUrl) => {
+            try {
+              await wallet.mint(mintImageUrl);
+              alert('Mint transaction sent!');
+            } catch (err) {
+              alert('Minting failed: ' + (err && err.message ? err.message : err));
+            }
           }
-        });
+        );
 
         // Re-enable save button while modal is shown
-        this.saveBtn.textContent = 'Save Signature';
+        this.saveBtn.textContent = 'Save';
         this.saveBtn.disabled = false;
       } catch (error) {
         console.error('Failed to save signature:', error);
         alert('Failed to save signature. Please try again.');
-        this.saveBtn.textContent = 'Save Signature';
+        this.saveBtn.textContent = 'Save';
         this.saveBtn.disabled = false;
       }
     });
@@ -152,7 +173,7 @@ export class SignatureControls {
 
   startRecording() {
     this.isRecording = true;
-    this.startBtn.textContent = 'Stop Recording';
+    this.startBtn.textContent = 'Stop';
     this.saveBtn.disabled = true;
     
     this.canvasManager.signatureCapture.startRecording();
@@ -173,7 +194,7 @@ export class SignatureControls {
 
   stopRecording() {
     this.isRecording = false;
-    this.startBtn.textContent = 'Start Recording';
+    this.startBtn.textContent = 'Start';
     this.saveBtn.disabled = false;
     
     clearInterval(this.timerInterval);

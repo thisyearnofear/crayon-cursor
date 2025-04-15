@@ -69,10 +69,10 @@ export class SignaturePreviewModal {
     this.saveButton.textContent = 'Save to Grove';
     this.saveButton.className = 'signature-button';
 
-    // Create upscale button
-    this.upscaleButton = document.createElement('button');
-    this.upscaleButton.textContent = 'Upscale (2x)';
-    this.upscaleButton.className = 'signature-button';
+    // Create mint button
+    this.mintButton = document.createElement('button');
+    this.mintButton.textContent = 'Mint';
+    this.mintButton.className = 'signature-button mint';
 
     // Create cancel button
     this.cancelButton = document.createElement('button');
@@ -92,8 +92,8 @@ export class SignaturePreviewModal {
     this.loadingIndicator.textContent = 'Processing...';
 
     // Assemble modal
-    this.buttons.appendChild(this.upscaleButton);
     this.buttons.appendChild(this.saveButton);
+    this.buttons.appendChild(this.mintButton);
     this.buttons.appendChild(this.cancelButton);
     this.content.appendChild(this.previewImage);
     this.content.appendChild(this.buttons);
@@ -156,31 +156,20 @@ export class SignaturePreviewModal {
     }
   }
 
-  show(imageDataUrl, onSave) {
+  show(imageDataUrl, onSave, onMint) {
     this.previewImage.src = imageDataUrl;
     this.modal.style.display = 'block';
     this.overlay.style.display = 'block';
 
-    // Setup upscale handler
-    this.upscaleButton.onclick = async () => {
-      try {
-        const upscaledImageUrl = await this.upscaleImage(imageDataUrl);
-        this.previewImage.src = upscaledImageUrl;
-        // Update the save handler to use upscaled image
-        this.saveButton.onclick = () => {
-          this.hide();
-          onSave(upscaledImageUrl);
-        };
-      } catch (error) {
-        console.error('Failed to upscale:', error);
-        alert('Failed to upscale image. Please try again.');
-      }
-    };
-
     // Setup save handler
     this.saveButton.onclick = () => {
       this.hide();
-      onSave(imageDataUrl);
+      if (onSave) onSave(imageDataUrl);
+    };
+    // Setup mint handler
+    this.mintButton.onclick = () => {
+      this.hide();
+      if (onMint) onMint(imageDataUrl);
     };
   }
 
