@@ -1,5 +1,5 @@
 // MobileSignatureModal: A contained modal for fast, focused drawing on mobile
-import { SignatureCapture } from './signature-capture.js';
+import { SignatureCapture } from '../signature-capture.js';
 export class MobileSignatureModal {
   constructor({ onSave, onCancel }) {
     this.onSave = onSave;
