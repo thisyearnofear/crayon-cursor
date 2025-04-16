@@ -1,0 +1,41 @@
+// main.scss
+// Main style file that imports all other styles
+
+// Import component styles
+@use 'components/buttons';
+@use 'components/modals';
+@use 'components/signature';
+
+// Import utility styles
+@use 'utils/mixins';
+
+// Global styles
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  margin: 0;
+  padding: 0;
+  color: #333;
+  background-color: #f9f9f9;
+}
+
+// Status messages
+.status-message {
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 10px;
+  text-align: center;
+  min-height: 1.5em;
+  transition: color 0.25s;
+
+  &.success {
+    color: #22a722;
+  }
+
+  &.error {
+    color: #D32F2F;
+  }
+
+  &.processing {
+    color: #888;
+  }
+}

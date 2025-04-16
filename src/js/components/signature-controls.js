@@ -1,20 +1,36 @@
-import { SignaturePreviewModal } from './signature-preview-modal.js';
-import { MobileSignatureModal } from './mobile-signature-modal.js';
-import wallet from './wallet';
+import { SignatureModal } from "./signature-modal.js";
+import wallet from "./wallet";
 
 export class SignatureControls {
   constructor(canvasManager) {
     this.canvasManager = canvasManager;
     this.isRecording = false;
     this.timerInterval = null;
-    this.previewModal = new SignaturePreviewModal();
-    
+
+    // Create modals
+    this.signatureModal = new SignatureModal({
+      title: "Your Signature",
+      onClose: () => {
+        // Re-enable buttons when modal is closed
+        if (this.signBtn) {
+          this.signBtn.disabled = false;
+        }
+      },
+    });
+
+    this.mobileSignatureModal = new SignatureModal({
+      title: "Sign on Mobile",
+      isMobile: true,
+      width: "380px",
+      onClose: () => {},
+    });
+
     this.createUI();
     this.attachEventListeners();
-    
+
     // Add keyboard control
-    document.addEventListener('keydown', (e) => {
-      if (e.key.toLowerCase() === 'r') {
+    document.addEventListener("keydown", (e) => {
+      if (e.key.toLowerCase() === "r") {
         if (!this.isRecording) {
           this.startRecording();
         } else {
@@ -26,15 +42,15 @@ export class SignatureControls {
 
   createUI() {
     // Create container
-    const container = document.createElement('div');
-    container.className = 'signature-controls';
+    const container = document.createElement("div");
+    container.className = "signature-controls";
 
     // If mobile, show a 'Sign on Mobile' button
     if (window.innerWidth <= 600) {
-      const mobileBtn = document.createElement('button');
-      mobileBtn.textContent = 'Sign on Mobile';
-      mobileBtn.className = 'signature-button';
-      mobileBtn.style.marginBottom = '12px';
+      const mobileBtn = document.createElement("button");
+      mobileBtn.textContent = "Sign on Mobile";
+      mobileBtn.className = "signature-button";
+      mobileBtn.style.marginBottom = "12px";
       mobileBtn.onclick = () => {
         new MobileSignatureModal({
           onSave: (dataUrl) => {
@@ -42,28 +58,35 @@ export class SignatureControls {
               dataUrl,
               async (finalImageUrl, uriCallback) => {
                 try {
-                  this.signBtn.textContent = 'Signing';
-                  const result = await this.canvasManager.signatureCapture.saveToGrove(this.canvasManager, finalImageUrl);
+                  this.signBtn.textContent = "Signing";
+                  const result =
+                    await this.canvasManager.signatureCapture.saveToGrove(
+                      this.canvasManager,
+                      finalImageUrl
+                    );
                   // Only call the callback with the URI (if provided)
                   if (uriCallback) uriCallback(result.uri);
                 } catch (error) {
-                  alert('Failed to save signature. Please try again.');
+                  alert("Failed to save signature. Please try again.");
                 } finally {
-                  this.signBtn.textContent = 'Sign';
+                  this.signBtn.textContent = "Sign";
                   this.signBtn.disabled = true;
                 }
               },
               async (mintImageUrl) => {
                 try {
                   await wallet.mint(mintImageUrl);
-                  alert('Mint transaction sent!');
+                  alert("Mint transaction sent!");
                 } catch (err) {
-                  alert('Minting failed: ' + (err && err.message ? err.message : err));
+                  alert(
+                    "Minting failed: " +
+                      (err && err.message ? err.message : err)
+                  );
                 }
               }
             );
           },
-          onCancel: () => {}
+          onCancel: () => {},
         });
       };
       container.appendChild(mobileBtn);
@@ -76,7 +99,7 @@ export class SignatureControls {
     `;
 
     // Add styles
-    const style = document.createElement('style');
+    const style = document.createElement("style");
     style.textContent = `
       .signature-controls {
         position: static;
@@ -140,7 +163,7 @@ export class SignatureControls {
     document.head.appendChild(style);
 
     // Add to DOM
-    const anchor = document.getElementById('signature-controls-anchor');
+    const anchor = document.getElementById("signature-controls-anchor");
     if (anchor) {
       anchor.appendChild(container);
     } else {
@@ -148,13 +171,13 @@ export class SignatureControls {
     }
     // Store references
     this.container = container;
-    this.timerEl = container.querySelector('.timer');
-    this.startBtn = container.querySelector('.start-btn');
-    this.signBtn = container.querySelector('.sign-btn');
+    this.timerEl = container.querySelector(".timer");
+    this.startBtn = container.querySelector(".start-btn");
+    this.signBtn = container.querySelector(".sign-btn");
   }
 
   attachEventListeners() {
-    this.startBtn.addEventListener('click', () => {
+    this.startBtn.addEventListener("click", () => {
       if (window.innerWidth <= 600) {
         // On mobile, launch the modal instead of recording
         new MobileSignatureModal({
@@ -163,31 +186,38 @@ export class SignatureControls {
               dataUrl,
               async (finalImageUrl) => {
                 try {
-                  this.signBtn.textContent = 'Signing';
-                  const result = await this.canvasManager.signatureCapture.saveToGrove(this.canvasManager, finalImageUrl);
+                  this.signBtn.textContent = "Signing";
+                  const result =
+                    await this.canvasManager.signatureCapture.saveToGrove(
+                      this.canvasManager,
+                      finalImageUrl
+                    );
                   this.previewModal.showResult({
                     imageUrl: result.imageUrl,
                     uri: result.uri,
-                    imageDataUrl: finalImageUrl
+                    imageDataUrl: finalImageUrl,
                   });
                 } catch (error) {
-                  alert('Failed to save signature. Please try again.');
+                  alert("Failed to save signature. Please try again.");
                 } finally {
-                  this.signBtn.textContent = 'Sign';
+                  this.signBtn.textContent = "Sign";
                   this.signBtn.disabled = true;
                 }
               },
               async (mintImageUrl) => {
                 try {
                   await wallet.mint(mintImageUrl);
-                  alert('Mint transaction sent!');
+                  alert("Mint transaction sent!");
                 } catch (err) {
-                  alert('Minting failed: ' + (err && err.message ? err.message : err));
+                  alert(
+                    "Minting failed: " +
+                      (err && err.message ? err.message : err)
+                  );
                 }
               }
             );
           },
-          onCancel: () => {}
+          onCancel: () => {},
         });
         return;
       }
@@ -198,15 +228,15 @@ export class SignatureControls {
       }
     });
 
-    this.signBtn.addEventListener('click', async () => {
+    this.signBtn.addEventListener("click", async () => {
       try {
         this.signBtn.disabled = true;
-        this.signBtn.textContent = 'Signing';
-        
+        this.signBtn.textContent = "Signing";
+
         // Get the signature image
         const imageDataUrl = this.canvasManager.captureCanvas();
         if (!imageDataUrl) {
-          throw new Error('Failed to capture signature');
+          throw new Error("Failed to capture signature");
         }
 
         // Show preview modal
@@ -214,35 +244,41 @@ export class SignatureControls {
           imageDataUrl,
           async (finalImageUrl, uriCallback) => {
             try {
-              this.signBtn.textContent = 'Signing';
-              const result = await this.canvasManager.signatureCapture.saveToGrove(this.canvasManager, finalImageUrl);
+              this.signBtn.textContent = "Signing";
+              const result =
+                await this.canvasManager.signatureCapture.saveToGrove(
+                  this.canvasManager,
+                  finalImageUrl
+                );
               // Only call the callback with the URI (if provided)
               if (uriCallback) uriCallback(result.uri);
             } catch (error) {
-              console.error('Failed to save to Grove:', error);
-              alert('Failed to save signature. Please try again.');
+              console.error("Failed to save to Grove:", error);
+              alert("Failed to save signature. Please try again.");
             } finally {
-              this.signBtn.textContent = 'Sign';
+              this.signBtn.textContent = "Sign";
               this.signBtn.disabled = true;
             }
           },
           async (mintImageUrl) => {
             try {
               await wallet.mint(mintImageUrl);
-              alert('Mint transaction sent!');
+              alert("Mint transaction sent!");
             } catch (err) {
-              alert('Minting failed: ' + (err && err.message ? err.message : err));
+              alert(
+                "Minting failed: " + (err && err.message ? err.message : err)
+              );
             }
           }
         );
 
         // Re-enable save button while modal is shown
-        this.signBtn.textContent = 'Sign';
+        this.signBtn.textContent = "Sign";
         this.signBtn.disabled = false;
       } catch (error) {
-        console.error('Failed to save signature:', error);
-        alert('Failed to save signature. Please try again.');
-        this.signBtn.textContent = 'Sign';
+        console.error("Failed to save signature:", error);
+        alert("Failed to save signature. Please try again.");
+        this.signBtn.textContent = "Sign";
         this.signBtn.disabled = false;
       }
     });
@@ -250,7 +286,7 @@ export class SignatureControls {
 
   startRecording() {
     this.isRecording = true;
-    this.startBtn.textContent = 'Stop';
+    this.startBtn.textContent = "Stop";
     this.signBtn.disabled = true;
     this.canvasManager.setTrailFadePaused(true);
     this.canvasManager.signatureCapture.startRecording();
@@ -258,7 +294,9 @@ export class SignatureControls {
     let timeLeft = 10;
     this.updateTimer(timeLeft);
     this.timerInterval = setInterval(() => {
-      timeLeft = Math.floor(this.canvasManager.signatureCapture.getRemainingTime() / 1000);
+      timeLeft = Math.floor(
+        this.canvasManager.signatureCapture.getRemainingTime() / 1000
+      );
       this.updateTimer(timeLeft);
       if (timeLeft <= 0) {
         this.stopRecording();
@@ -268,7 +306,7 @@ export class SignatureControls {
 
   stopRecording() {
     this.isRecording = false;
-    this.startBtn.textContent = 'Start';
+    this.startBtn.textContent = "Start";
     this.signBtn.disabled = false;
     clearInterval(this.timerInterval);
     this.canvasManager.signatureCapture.stopRecording();
@@ -290,6 +328,7 @@ export class SignatureControls {
   updateTimer(seconds) {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    this.timerEl.textContent = mins.toString().padStart(2, '0') + ':' + secs.toString().padStart(2, '0');
+    this.timerEl.textContent =
+      mins.toString().padStart(2, "0") + ":" + secs.toString().padStart(2, "0");
   }
 }

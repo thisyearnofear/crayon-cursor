@@ -2,9 +2,9 @@
 // All ZORA Coins SDK logic is kept isolated from drawing/canvas logic.
 // This module provides functions to mint (create) signature coins.
 
-import { createCoin } from '@zoralabs/coins-sdk';
-import { createWalletClient, createPublicClient, http } from 'viem';
-import { base } from 'viem/chains';
+import { createCoin } from "@zoralabs/coins-sdk";
+import { createWalletClient, createPublicClient, http } from "viem";
+import { base } from "viem/chains";
 
 /**
  * Create a new signature coin on ZORA.
@@ -28,17 +28,17 @@ export async function createSignatureCoin({
   account,
   rpcUrl,
   platformReferrer,
-  initialPurchaseWei
+  initialPurchaseWei,
 }) {
   // Set up viem clients
   const publicClient = createPublicClient({
     chain: base,
-    transport: http(rpcUrl)
+    transport: http(rpcUrl),
   });
   const walletClient = createWalletClient({
     account,
     chain: base,
-    transport: http(rpcUrl)
+    transport: http(rpcUrl),
   });
 
   // Prepare coin params
@@ -48,7 +48,7 @@ export async function createSignatureCoin({
     uri: metadataUri,
     payoutRecipient,
     ...(platformReferrer ? { platformReferrer } : {}),
-    ...(initialPurchaseWei ? { initialPurchaseWei } : {})
+    ...(initialPurchaseWei ? { initialPurchaseWei } : {}),
   };
 
   // Call the SDK

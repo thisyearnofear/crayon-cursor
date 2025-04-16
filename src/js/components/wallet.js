@@ -1,6 +1,6 @@
 // wallet.js
 // Simple MetaMask + ethers.js wallet integration for minting
-import { ethers } from 'ethers';
+import { ethers } from "ethers";
 
 class Wallet {
   constructor() {
@@ -20,7 +20,7 @@ class Wallet {
       if (!res.ok) return null;
       const profiles = await res.json();
       // Prefer ENS, fallback to first
-      const ens = profiles.find(p => p.platform === 'ens');
+      const ens = profiles.find((p) => p.platform === "ens");
       return ens || profiles[0] || null;
     } catch {
       return null;
@@ -32,7 +32,9 @@ class Wallet {
     const profile = await this.getProfile(this.account);
     this.ensName = profile && profile.displayName ? profile.displayName : null;
     this.avatar = profile && profile.avatar ? profile.avatar : null;
-    this.profileCallbacks.forEach(cb => cb({ ensName: this.ensName, avatar: this.avatar, account: this.account }));
+    this.profileCallbacks.forEach((cb) =>
+      cb({ ensName: this.ensName, avatar: this.avatar, account: this.account })
+    );
   }
 
   onProfileChange(cb) {
@@ -41,13 +43,14 @@ class Wallet {
 
   getDisplayName() {
     if (this.ensName) return this.ensName;
-    if (this.account) return this.account.slice(0,6) + '...' + this.account.slice(-4);
-    return '';
+    if (this.account)
+      return this.account.slice(0, 6) + "..." + this.account.slice(-4);
+    return "";
   }
 
   _setup() {
     if (window.ethereum) {
-      window.ethereum.on('accountsChanged', (accounts) => {
+      window.ethereum.on("accountsChanged", (accounts) => {
         this.account = accounts[0] || null;
         this._notify();
         this.updateProfile();
@@ -57,11 +60,13 @@ class Wallet {
 
   async connect() {
     if (!window.ethereum) {
-      alert('MetaMask not detected. Please install MetaMask.');
+      alert("MetaMask not detected. Please install MetaMask.");
       return;
     }
     this.provider = new ethers.BrowserProvider(window.ethereum);
-    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    const accounts = await window.ethereum.request({
+      method: "eth_requestAccounts",
+    });
     this.account = accounts[0];
     this.signer = await this.provider.getSigner();
     this._notify();
@@ -73,7 +78,7 @@ class Wallet {
   }
 
   _notify() {
-    this.callbacks.forEach(cb => cb(this.account));
+    this.callbacks.forEach((cb) => cb(this.account));
   }
 
   isConnected() {
@@ -83,7 +88,6 @@ class Wallet {
   getAccount() {
     return this.account;
   }
-
 }
 
 const wallet = new Wallet();

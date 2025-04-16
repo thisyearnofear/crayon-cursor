@@ -1,0 +1,72 @@
+// signature.scss
+// Styles for signature components
+
+@use '../utils/mixins' as mix;
+
+// Signature controls
+.signature-controls {
+  position: static;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.08);
+  padding: 13px 22px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 10;
+  font-family: inherit;
+  font-size: 13px;
+  transition: box-shadow 0.2s;
+  width: 100%;
+  min-width: 260px;
+  max-width: 420px;
+
+  .timer {
+    margin-bottom: 5px;
+    color: #7A200C;
+  }
+
+  .hint {
+    font-size: 10px;
+    text-align: center;
+    margin-bottom: 7px;
+    color: #666;
+    font-family: monospace;
+  }
+
+  button {
+    padding: 7px 13px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 11px;
+    transition: background-color 0.2s;
+  }
+
+  .start-btn {
+    background: #FC0E49;
+    color: white;
+
+    &:hover {
+      background: #e00940;
+    }
+  }
+
+  .sign-btn {
+    background: #7A200C;
+    color: white;
+
+    &:hover {
+      background: #641a0a;
+    }
+  }
+
+  button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+}

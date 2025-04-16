@@ -1,0 +1,81 @@
+// modals.scss
+// Styles for modal components
+
+@use '../utils/mixins' as mix;
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: none;
+  z-index: 1000;
+}
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1001;
+  display: none;
+  width: 450px;
+  max-width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+
+  &.signature-modal {
+    .modal-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      justify-content: center;
+    }
+
+    .result-container {
+      margin-top: 15px;
+      text-align: center;
+    }
+
+    .mint-form {
+      margin-top: 15px;
+      width: 100%;
+    }
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+  }
+}
+
+// Mobile adjustments
+@media (max-width: 600px) {
+  .modal {
+    width: 90% !important;
+    padding: 15px;
+
+    .modal-buttons {
+      flex-wrap: wrap;
+    }
+  }
+}
