@@ -40,20 +40,17 @@ export class SignatureControls {
           onSave: (dataUrl) => {
             this.previewModal.show(
               dataUrl,
-              async (finalImageUrl) => {
+              async (finalImageUrl, uriCallback) => {
                 try {
-                  this.saveBtn.textContent = 'Saving';
+                  this.signBtn.textContent = 'Signing';
                   const result = await this.canvasManager.signatureCapture.saveToGrove(this.canvasManager, finalImageUrl);
-                  this.previewModal.showResult({
-  imageUrl: result.imageUrl,
-  uri: result.uri,
-  imageDataUrl: finalImageUrl
-});
+                  // Only call the callback with the URI (if provided)
+                  if (uriCallback) uriCallback(result.uri);
                 } catch (error) {
                   alert('Failed to save signature. Please try again.');
                 } finally {
-                  this.saveBtn.textContent = 'Save';
-                  this.saveBtn.disabled = true;
+                  this.signBtn.textContent = 'Sign';
+                  this.signBtn.disabled = true;
                 }
               },
               async (mintImageUrl) => {
@@ -75,7 +72,7 @@ export class SignatureControls {
       <div class="timer">00:10</div>
       <div class="hint">Press 'R' to start/stop recording</div>
       <button class="start-btn">Start</button>
-      <button class="save-btn" disabled>Save</button>
+      <button class="sign-btn" disabled>Sign</button>
     `;
 
     // Add styles
@@ -128,11 +125,11 @@ export class SignatureControls {
       .signature-controls .start-btn:hover {
         background: #e00940;
       }
-      .signature-controls .save-btn {
+      .signature-controls .sign-btn {
         background: #7A200C;
         color: white;
       }
-      .signature-controls .save-btn:hover {
+      .signature-controls .sign-btn:hover {
         background: #641a0a;
       }
       .signature-controls button:disabled {
@@ -153,7 +150,7 @@ export class SignatureControls {
     this.container = container;
     this.timerEl = container.querySelector('.timer');
     this.startBtn = container.querySelector('.start-btn');
-    this.saveBtn = container.querySelector('.save-btn');
+    this.signBtn = container.querySelector('.sign-btn');
   }
 
   attachEventListeners() {
@@ -166,7 +163,7 @@ export class SignatureControls {
               dataUrl,
               async (finalImageUrl) => {
                 try {
-                  this.saveBtn.textContent = 'Saving';
+                  this.signBtn.textContent = 'Signing';
                   const result = await this.canvasManager.signatureCapture.saveToGrove(this.canvasManager, finalImageUrl);
                   this.previewModal.showResult({
                     imageUrl: result.imageUrl,
@@ -176,8 +173,8 @@ export class SignatureControls {
                 } catch (error) {
                   alert('Failed to save signature. Please try again.');
                 } finally {
-                  this.saveBtn.textContent = 'Save';
-                  this.saveBtn.disabled = true;
+                  this.signBtn.textContent = 'Sign';
+                  this.signBtn.disabled = true;
                 }
               },
               async (mintImageUrl) => {
@@ -201,10 +198,10 @@ export class SignatureControls {
       }
     });
 
-    this.saveBtn.addEventListener('click', async () => {
+    this.signBtn.addEventListener('click', async () => {
       try {
-        this.saveBtn.disabled = true;
-        this.saveBtn.textContent = 'Saving';
+        this.signBtn.disabled = true;
+        this.signBtn.textContent = 'Signing';
         
         // Get the signature image
         const imageDataUrl = this.canvasManager.captureCanvas();
@@ -215,23 +212,18 @@ export class SignatureControls {
         // Show preview modal
         this.previewModal.show(
           imageDataUrl,
-          async (finalImageUrl) => {
+          async (finalImageUrl, uriCallback) => {
             try {
-              this.saveBtn.textContent = 'Saving';
+              this.signBtn.textContent = 'Signing';
               const result = await this.canvasManager.signatureCapture.saveToGrove(this.canvasManager, finalImageUrl);
-              console.log('Signature saved:', result);
-              this.previewModal.showResult({
-                imageUrl: result.imageUrl,
-                uri: result.uri,
-                imageDataUrl: finalImageUrl
-              });
-              
+              // Only call the callback with the URI (if provided)
+              if (uriCallback) uriCallback(result.uri);
             } catch (error) {
               console.error('Failed to save to Grove:', error);
               alert('Failed to save signature. Please try again.');
             } finally {
-              this.saveBtn.textContent = 'Save';
-              this.saveBtn.disabled = true;
+              this.signBtn.textContent = 'Sign';
+              this.signBtn.disabled = true;
             }
           },
           async (mintImageUrl) => {
@@ -245,13 +237,13 @@ export class SignatureControls {
         );
 
         // Re-enable save button while modal is shown
-        this.saveBtn.textContent = 'Save';
-        this.saveBtn.disabled = false;
+        this.signBtn.textContent = 'Sign';
+        this.signBtn.disabled = false;
       } catch (error) {
         console.error('Failed to save signature:', error);
         alert('Failed to save signature. Please try again.');
-        this.saveBtn.textContent = 'Save';
-        this.saveBtn.disabled = false;
+        this.signBtn.textContent = 'Sign';
+        this.signBtn.disabled = false;
       }
     });
   }
@@ -259,7 +251,7 @@ export class SignatureControls {
   startRecording() {
     this.isRecording = true;
     this.startBtn.textContent = 'Stop';
-    this.saveBtn.disabled = true;
+    this.signBtn.disabled = true;
     this.canvasManager.setTrailFadePaused(true);
     this.canvasManager.signatureCapture.startRecording();
     // Start timer
@@ -277,7 +269,7 @@ export class SignatureControls {
   stopRecording() {
     this.isRecording = false;
     this.startBtn.textContent = 'Start';
-    this.saveBtn.disabled = false;
+    this.signBtn.disabled = false;
     clearInterval(this.timerInterval);
     this.canvasManager.signatureCapture.stopRecording();
     // Start grace period: keep trail visible for 10s

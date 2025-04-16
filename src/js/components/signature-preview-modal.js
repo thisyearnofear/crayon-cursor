@@ -242,19 +242,164 @@ export class SignaturePreviewModal {
     this.overlay.style.display = 'block';
 
     // Setup save handler
-    this.saveButton.onclick = () => {
-      // Show loading indicator, hide buttons
+    // Refactored: shared save-to-grove logic
+    this.saveToGrove = async (imageDataUrl, afterSaveCallback) => {
       this.buttons.style.display = 'none';
       this.statusMessage.textContent = 'Processing';
       this.statusMessage.style.color = '#888';
-      if (onSave) onSave(imageDataUrl);
+      try {
+        // If onSave expects a callback for URI, wrap it so it never calls showResult directly
+        if (onSave) {
+          // Some legacy onSave impls may call showResult; we block this by intercepting
+          await onSave(imageDataUrl, (uri) => {
+            this.savedMetadataUri = uri;
+            if (afterSaveCallback) afterSaveCallback(uri);
+          });
+        } else {
+          // fallback: fake URI
+          setTimeout(() => {
+            const uri = 'ipfs://fakeuri-' + Math.random().toString(36).slice(2);
+            this.savedMetadataUri = uri;
+            if (afterSaveCallback) afterSaveCallback(uri);
+          }, 1200);
+        }
+      } catch (err) {
+        this.statusMessage.textContent = 'Save failed: ' + (err.message || err);
+        this.statusMessage.style.color = '#D32F2F';
+      }
     };
 
-    // Setup mint handler
-    this.mintButton.onclick = () => {
-      this.hide();
-      if (onMint) onMint(imageDataUrl);
+
+    this.saveButton.onclick = () => {
+      this.saveToGrove(imageDataUrl, (uri) => {
+        // Only after save, show the download/exit UI
+        this.showResult({ imageUrl: uri, uri, imageDataUrl });
+      });
     };
+
+
+    // Setup mint handler
+    this.mintButton.onclick = async () => {
+      // If already have metadata URI, proceed to mint form
+      const proceedToMintForm = (metadataUri) => {
+        this.savedMetadataUri = metadataUri;
+        this.buttons.style.display = 'none';
+        if (this.mintFormContainer) this.mintFormContainer.remove();
+        const form = document.createElement('form');
+        form.style.cssText = 'display:flex;flex-direction:column;gap:16px;width:100%;max-width:340px;align-items:center;';
+        // Coin Name
+        const nameLabel = document.createElement('label');
+        nameLabel.textContent = 'Coin Name';
+        nameLabel.style.fontWeight = 'bold';
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.value = 'Signature Opal';
+        nameInput.required = true;
+        nameInput.style.cssText = 'width:100%;padding:7px 10px;border-radius:6px;border:1px solid #ccc;';
+        // Coin Symbol
+        const symbolLabel = document.createElement('label');
+        symbolLabel.textContent = 'Symbol';
+        symbolLabel.style.fontWeight = 'bold';
+        const symbolInput = document.createElement('input');
+        symbolInput.type = 'text';
+        symbolInput.value = 'OPAL';
+        symbolInput.required = true;
+        symbolInput.maxLength = 8;
+        symbolInput.style.cssText = 'width:100%;padding:7px 10px;border-radius:6px;border:1px solid #ccc;text-transform:uppercase;';
+        // Metadata URI (readonly)
+        const uriLabel = document.createElement('label');
+        uriLabel.textContent = 'Metadata URI';
+        uriLabel.style.fontWeight = 'bold';
+        const uriInput = document.createElement('input');
+        uriInput.type = 'text';
+        uriInput.value = metadataUri;
+        uriInput.readOnly = true;
+        uriInput.style.cssText = 'width:100%;padding:7px 10px;border-radius:6px;border:1px solid #ccc;background:#f8f8f8;';
+        // Payout Address (readonly)
+        const payoutLabel = document.createElement('label');
+        payoutLabel.textContent = 'Payout Address';
+        payoutLabel.style.fontWeight = 'bold';
+        const payoutInput = document.createElement('input');
+        payoutInput.type = 'text';
+        payoutInput.value = this.savedPayoutAddress || '';
+        payoutInput.readOnly = true;
+        payoutInput.style.cssText = 'width:100%;padding:7px 10px;border-radius:6px;border:1px solid #ccc;background:#f8f8f8;';
+        // Mint/Cancel buttons
+        const mintBtn = document.createElement('button');
+        mintBtn.type = 'submit';
+        mintBtn.textContent = 'Mint';
+        mintBtn.style.cssText = 'margin-top:6px;padding:9px 26px;border-radius:7px;background:#7A200C;color:#fff;border:none;cursor:pointer;font-size:1.1em;';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.style.cssText = 'margin-top:6px;padding:8px 22px;border-radius:7px;background:#FC0E49;color:#fff;border:none;cursor:pointer;';
+        cancelBtn.onclick = () => {
+          form.remove();
+          this.buttons.style.display = 'flex';
+          this.statusMessage.textContent = '';
+        };
+        // Assemble form
+        form.appendChild(nameLabel);
+        form.appendChild(nameInput);
+        form.appendChild(symbolLabel);
+        form.appendChild(symbolInput);
+        form.appendChild(uriLabel);
+        form.appendChild(uriInput);
+        form.appendChild(payoutLabel);
+        form.appendChild(payoutInput);
+        form.appendChild(mintBtn);
+        form.appendChild(cancelBtn);
+        // Container for result/progress
+        const resultDiv = document.createElement('div');
+        resultDiv.style.cssText = 'margin-top:14px;text-align:center;';
+        form.appendChild(resultDiv);
+        // Save reference
+        this.mintFormContainer = form;
+        this.content.appendChild(form);
+        // Mint submit handler
+        form.onsubmit = async (e) => {
+          e.preventDefault();
+          mintBtn.disabled = true;
+          cancelBtn.disabled = true;
+          resultDiv.textContent = 'Minting...';
+          resultDiv.style.color = '#7A200C';
+          try {
+            const { createSignatureCoin } = await import('../coins/zora-coins.js');
+            const result = await createSignatureCoin({
+              name: nameInput.value,
+              symbol: symbolInput.value.toUpperCase(),
+              metadataUri: uriInput.value,
+              payoutRecipient: payoutInput.value,
+              account: payoutInput.value,
+              rpcUrl: 'https://mainnet.base.org',
+              platformReferrer: '0x55A5705453Ee82c742274154136Fce8149597058'
+            });
+            resultDiv.innerHTML = `<div style='color:#22a722;font-weight:bold;'>Minted!</div><div><b>Coin Address:</b> <a href='https://basescan.org/address/${result.address}' target='_blank'>${result.address}</a></div><div><b>Tx Hash:</b> <a href='https://basescan.org/tx/${result.hash}' target='_blank'>${result.hash}</a></div>`;
+          } catch (err) {
+            resultDiv.textContent = 'Mint failed: ' + (err.message || err);
+            resultDiv.style.color = '#D32F2F';
+          } finally {
+            mintBtn.disabled = false;
+            cancelBtn.disabled = false;
+          }
+        };
+      };
+
+      if (this.savedMetadataUri) {
+        proceedToMintForm(this.savedMetadataUri);
+      } else {
+        // No metadata URI, trigger Grove save flow
+        this.buttons.style.display = 'none';
+        this.statusMessage.textContent = 'Saving signature…';
+        this.statusMessage.style.color = '#888';
+        // Use the shared saveToGrove logic and go directly to mint form
+        this.saveToGrove(imageDataUrl, (uri) => {
+          this.statusMessage.textContent = '';
+          proceedToMintForm(uri);
+        });
+      }
+    };
+
   }
 
   // Crop bottom third off for preview

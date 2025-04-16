@@ -13,9 +13,12 @@
     "vite": "^6.2.3"
   },
   "dependencies": {
+    "@lens-chain/sdk": "^1.0.3",
     "@lens-chain/storage-client": "^1.0.3",
+    "@zoralabs/coins-sdk": "^0.0.8",
     "ethers": "^6.13.5",
     "p5": "^1.11.3",
-    "p5.brush": "^1.1.4"
+    "p5.brush": "^1.1.4",
+    "viem": "^2.27.0"
   }
 }
