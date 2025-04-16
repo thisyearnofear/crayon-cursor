@@ -19,26 +19,30 @@ export class MobileSignatureModal {
     this.modal.style.cssText = `
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.75);
+      background: #FC0E49;
       z-index: 10000;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: background 0.2s;
     `;
 
     // Centered container
     const container = document.createElement('div');
     container.style.cssText = `
       background: #fff;
-      border-radius: 16px;
-      padding: 16px;
-      box-shadow: 0 6px 32px rgba(0,0,0,0.18);
+      border-radius: 24px;
+      padding: 24px 18px 18px 18px;
+      box-shadow: 0 8px 40px 0 rgba(252,14,73,0.18), 0 2px 12px 0 rgba(0,0,0,0.10);
       display: flex;
       flex-direction: column;
       align-items: center;
-      width: 95vw;
-      max-width: 400px;
-      max-height: 90vh;
+      width: 96vw;
+      max-width: 440px;
+      max-height: 92vh;
+      margin: 0 auto;
+      position: relative;
+      justify-content: center;
     `;
 
     // Canvas
@@ -123,6 +127,7 @@ export class MobileSignatureModal {
       addCrayonTextureToCanvas(this.canvas);
       const dataUrl = this.canvas.toDataURL('image/png');
       this.hide();
+      // Instead of passing dataUrl to preview, pass it to onSave for injection to p5.js canvas
       if (this.onSave) this.onSave(dataUrl);
     };
 
