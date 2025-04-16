@@ -158,24 +158,29 @@ export class SignatureControls {
         // On mobile, launch the modal instead of recording
         new MobileSignatureModal({
           onSave: (dataUrl) => {
-            // Inject signature image as a p5.Image using the p5.js instance
-            this.canvasManager.setImportedSignature(dataUrl, this.canvasManager.p5Instance);
-            // Pause trail fade and start grace timer as on desktop
-            this.canvasManager.setTrailFadePaused(true);
-            let grace = 0;
-            this.updateTimer(grace);
-            if (this.timerInterval) clearInterval(this.timerInterval);
-            this.timerInterval = setInterval(() => {
-              grace++;
-              this.updateTimer(grace);
-              if (grace >= 10) {
-                clearInterval(this.timerInterval);
-                this.canvasManager.setTrailFadePaused(false);
-                this.updateTimer(10);
+            this.previewModal.show(
+              dataUrl,
+              async (finalImageUrl) => {
+                try {
+                  this.saveBtn.textContent = 'Saving to Grove...';
+                  const result = await this.canvasManager.signatureCapture.saveToGrove(this.canvasManager, finalImageUrl);
+                  alert('Signature uploaded!\n\nDirect URL:\n' + result.imageUrl + '\n\nLens URI:\n' + result.uri);
+                } catch (error) {
+                  alert('Failed to save signature to Grove. Please try again.');
+                } finally {
+                  this.saveBtn.textContent = 'Save';
+                  this.saveBtn.disabled = true;
+                }
+              },
+              async (mintImageUrl) => {
+                try {
+                  await wallet.mint(mintImageUrl);
+                  alert('Mint transaction sent!');
+                } catch (err) {
+                  alert('Minting failed: ' + (err && err.message ? err.message : err));
+                }
               }
-            }, 1000);
-            // Enable save button for preview/mint flow
-            this.saveBtn.disabled = false;
+            );
           },
           onCancel: () => {}
         });
