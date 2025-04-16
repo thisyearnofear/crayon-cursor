@@ -312,7 +312,14 @@ export class SignaturePreviewModal {
         uriLabel.style.fontWeight = 'bold';
         const uriInput = document.createElement('input');
         uriInput.type = 'text';
-        uriInput.value = metadataUri;
+        // Convert lens://... to https://api.grove.storage/...
+      function lensToHttpUrl(uri) {
+        if (uri && uri.startsWith('lens://')) {
+          return 'https://api.grove.storage/' + uri.slice('lens://'.length);
+        }
+        return uri;
+      }
+      uriInput.value = lensToHttpUrl(this.savedImageUrl || metadataUri);
         uriInput.readOnly = true;
         uriInput.style.cssText = 'width:100%;padding:7px 10px;border-radius:6px;border:1px solid #ccc;background:#f8f8f8;';
         // Payout Address (readonly)
