@@ -4,6 +4,8 @@ import { SignatureCapture } from '../signature-capture.js';
 
 export default class CanvasManager {
   pauseTrailFade = false;
+  importedSignature = null;
+  importedSignatureTimer = null;
   constructor() {
     this.p5Instance = null;
     this.signatureCapture = new SignatureCapture();
@@ -91,6 +93,12 @@ export default class CanvasManager {
       p.translate(-this.width / 2, -this.height / 2);
       p.background('#FC0E49');
 
+      // If imported signature exists, draw it and skip normal drawing
+      if (this.importedSignature) {
+        p.image(this.importedSignature, 0, 0, this.width, this.height);
+        return;
+      }
+
       brush.stroke('#7A200C');
       brush.strokeWeight(1);
       brush.noFill();
@@ -118,6 +126,18 @@ export default class CanvasManager {
       const r = 5 + 0.05 * this.mouse.delta.c + this.polygonHover.c * (100 + this.mouse.delta.c * 0.5);
       brush.circle(this.mouse.x.c, this.mouse.y.c, r);
     };
+  }
+
+  setImportedSignature(dataUrl, pInstance) {
+    // Load as p5.Image and set
+    pInstance.loadImage(dataUrl, img => {
+      this.importedSignature = img;
+      // Optionally, clear after 10s (grace period)
+      if (this.importedSignatureTimer) clearTimeout(this.importedSignatureTimer);
+      this.importedSignatureTimer = setTimeout(() => {
+        this.importedSignature = null;
+      }, 10000);
+    });
   }
   initPolygon() {
     const gridSize = { x: 1440, y: 930 };

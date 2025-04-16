@@ -158,34 +158,24 @@ export class SignatureControls {
         // On mobile, launch the modal instead of recording
         new MobileSignatureModal({
           onSave: (dataUrl) => {
-            // Inject signature image into main p5.js canvas
-            const img = new window.Image();
-            img.onload = () => {
-              // Draw image onto p5.js canvas
-              const mainCanvas = this.canvasManager.canvas;
-              const ctx = mainCanvas.getContext('2d');
-              // Optionally clear before drawing
-              ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
-              ctx.drawImage(img, 0, 0, mainCanvas.width, mainCanvas.height);
-              // Pause trail fade and start grace timer as on desktop
-              this.canvasManager.setTrailFadePaused(true);
-              // Start grace period: keep trail visible for 10s
-              let grace = 0;
+            // Inject signature image as a p5.Image using the p5.js instance
+            this.canvasManager.setImportedSignature(dataUrl, this.canvasManager.p5Instance);
+            // Pause trail fade and start grace timer as on desktop
+            this.canvasManager.setTrailFadePaused(true);
+            let grace = 0;
+            this.updateTimer(grace);
+            if (this.timerInterval) clearInterval(this.timerInterval);
+            this.timerInterval = setInterval(() => {
+              grace++;
               this.updateTimer(grace);
-              if (this.timerInterval) clearInterval(this.timerInterval);
-              this.timerInterval = setInterval(() => {
-                grace++;
-                this.updateTimer(grace);
-                if (grace >= 10) {
-                  clearInterval(this.timerInterval);
-                  this.canvasManager.setTrailFadePaused(false);
-                  this.updateTimer(10);
-                }
-              }, 1000);
-              // Enable save button for preview/mint flow
-              this.saveBtn.disabled = false;
-            };
-            img.src = dataUrl;
+              if (grace >= 10) {
+                clearInterval(this.timerInterval);
+                this.canvasManager.setTrailFadePaused(false);
+                this.updateTimer(10);
+              }
+            }, 1000);
+            // Enable save button for preview/mint flow
+            this.saveBtn.disabled = false;
           },
           onCancel: () => {}
         });
