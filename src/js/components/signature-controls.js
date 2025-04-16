@@ -42,11 +42,15 @@ export class SignatureControls {
               dataUrl,
               async (finalImageUrl) => {
                 try {
-                  this.saveBtn.textContent = 'Saving to Grove...';
+                  this.saveBtn.textContent = 'Saving';
                   const result = await this.canvasManager.signatureCapture.saveToGrove(this.canvasManager, finalImageUrl);
-                  alert('Signature uploaded!\n\nDirect URL:\n' + result.imageUrl + '\n\nLens URI:\n' + result.uri);
+                  this.previewModal.showResult({
+  imageUrl: result.imageUrl,
+  uri: result.uri,
+  imageDataUrl: finalImageUrl
+});
                 } catch (error) {
-                  alert('Failed to save signature to Grove. Please try again.');
+                  alert('Failed to save signature. Please try again.');
                 } finally {
                   this.saveBtn.textContent = 'Save';
                   this.saveBtn.disabled = true;
@@ -162,11 +166,15 @@ export class SignatureControls {
               dataUrl,
               async (finalImageUrl) => {
                 try {
-                  this.saveBtn.textContent = 'Saving to Grove...';
+                  this.saveBtn.textContent = 'Saving';
                   const result = await this.canvasManager.signatureCapture.saveToGrove(this.canvasManager, finalImageUrl);
-                  alert('Signature uploaded!\n\nDirect URL:\n' + result.imageUrl + '\n\nLens URI:\n' + result.uri);
+                  this.previewModal.showResult({
+                    imageUrl: result.imageUrl,
+                    uri: result.uri,
+                    imageDataUrl: finalImageUrl
+                  });
                 } catch (error) {
-                  alert('Failed to save signature to Grove. Please try again.');
+                  alert('Failed to save signature. Please try again.');
                 } finally {
                   this.saveBtn.textContent = 'Save';
                   this.saveBtn.disabled = true;
@@ -196,7 +204,7 @@ export class SignatureControls {
     this.saveBtn.addEventListener('click', async () => {
       try {
         this.saveBtn.disabled = true;
-        this.saveBtn.textContent = 'Preparing...';
+        this.saveBtn.textContent = 'Saving';
         
         // Get the signature image
         const imageDataUrl = this.canvasManager.captureCanvas();
@@ -209,13 +217,18 @@ export class SignatureControls {
           imageDataUrl,
           async (finalImageUrl) => {
             try {
-              this.saveBtn.textContent = 'Saving to Grove...';
+              this.saveBtn.textContent = 'Saving';
               const result = await this.canvasManager.signatureCapture.saveToGrove(this.canvasManager, finalImageUrl);
               console.log('Signature saved:', result);
-              alert('Signature uploaded!\n\nDirect URL:\n' + result.imageUrl + '\n\nLens URI:\n' + result.uri);
+              this.previewModal.showResult({
+                imageUrl: result.imageUrl,
+                uri: result.uri,
+                imageDataUrl: finalImageUrl
+              });
+              
             } catch (error) {
               console.error('Failed to save to Grove:', error);
-              alert('Failed to save signature to Grove. Please try again.');
+              alert('Failed to save signature. Please try again.');
             } finally {
               this.saveBtn.textContent = 'Save';
               this.saveBtn.disabled = true;

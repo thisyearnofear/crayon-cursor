@@ -1,4 +1,52 @@
 export class SignaturePreviewModal {
+  showResult({ imageUrl, uri, imageDataUrl }) {
+    // Show success status
+    this.statusMessage.textContent = 'Signed';
+    this.statusMessage.style.color = '#22a722';
+    // Remove old result if present
+    if (this.resultContainer) {
+      this.resultContainer.remove();
+    }
+    this.resultContainer = document.createElement('div');
+    this.resultContainer.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+      word-break: break-all;
+    `;
+    // Grove URL
+    const urlLabel = document.createElement('div');
+    urlLabel.textContent = 'Saved URL:';
+    urlLabel.style.fontWeight = 'bold';
+    const urlLink = document.createElement('a');
+    urlLink.href = imageUrl;
+    urlLink.textContent = imageUrl;
+    urlLink.target = '_blank';
+    urlLink.style.color = '#7A200C';
+    urlLink.style.textDecoration = 'underline';
+    // Download button
+    const downloadBtn = document.createElement('a');
+    downloadBtn.textContent = 'Download';
+    downloadBtn.href = imageDataUrl;
+    downloadBtn.download = 'signature.png';
+    downloadBtn.className = 'signature-button';
+    downloadBtn.style.marginTop = '8px';
+    downloadBtn.style.background = '#7A200C';
+    downloadBtn.style.color = 'white';
+    downloadBtn.style.padding = '7px 18px';
+    downloadBtn.style.borderRadius = '6px';
+    downloadBtn.style.textAlign = 'center';
+    this.resultContainer.appendChild(urlLabel);
+    this.resultContainer.appendChild(urlLink);
+    this.resultContainer.appendChild(downloadBtn);
+    this.content.appendChild(this.resultContainer);
+    // Show modal if not already visible
+    this.modal.style.display = 'block';
+    this.overlay.style.display = 'block';
+  }
+
   constructor() {
     this.modal = null;
     this.createModal();
@@ -48,6 +96,46 @@ export class SignaturePreviewModal {
       gap: 20px;
     `;
 
+    // Create status message
+    this.statusMessage = document.createElement('div');
+    this.statusMessage.className = 'signature-status-message';
+    this.statusMessage.style.cssText = `
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 10px;
+      color: #888;
+      text-align: center;
+      min-height: 1.5em;
+      transition: color 0.25s;
+    `;
+
+    // Create close (X) button
+    this.closeBtn = document.createElement('button');
+    this.closeBtn.innerHTML = '&times;';
+    this.closeBtn.className = 'signature-modal-close';
+    this.closeBtn.style.cssText = `
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: #f4f4f4;
+      color: #7A200C;
+      font-size: 22px;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: background 0.2s;
+    `;
+    this.closeBtn.onmouseenter = () => { this.closeBtn.style.background = '#eee'; };
+    this.closeBtn.onmouseleave = () => { this.closeBtn.style.background = '#f4f4f4'; };
+    this.closeBtn.onclick = () => this.hide();
+
     // Create preview image
     this.previewImage = document.createElement('img');
     this.previewImage.style.cssText = `
@@ -80,24 +168,16 @@ export class SignaturePreviewModal {
     this.cancelButton.className = 'signature-button';
 
     // Add loading indicator
-    this.loadingIndicator = document.createElement('div');
-    this.loadingIndicator.className = 'loading-indicator';
-    this.loadingIndicator.style.cssText = `
-      display: none;
-      text-align: center;
-      margin-top: 10px;
-      font-style: italic;
-      color: #666;
-    `;
-    this.loadingIndicator.textContent = 'Processing...';
 
     // Assemble modal
     this.buttons.appendChild(this.saveButton);
     this.buttons.appendChild(this.mintButton);
     this.buttons.appendChild(this.cancelButton);
+    // Add status message and close button above preview image
+    this.content.appendChild(this.statusMessage);
+    this.modal.appendChild(this.closeBtn);
     this.content.appendChild(this.previewImage);
     this.content.appendChild(this.buttons);
-    this.content.appendChild(this.loadingIndicator);
     this.modal.appendChild(this.content);
 
     // Add to document
@@ -110,7 +190,6 @@ export class SignaturePreviewModal {
   }
 
   async upscaleImage(imageDataUrl) {
-    this.loadingIndicator.style.display = 'block';
     this.buttons.style.display = 'none';
 
     try {
@@ -151,7 +230,6 @@ export class SignaturePreviewModal {
         reader.readAsDataURL(upscaledBlob);
       });
     } finally {
-      this.loadingIndicator.style.display = 'none';
       this.buttons.style.display = 'flex';
     }
   }
@@ -165,9 +243,13 @@ export class SignaturePreviewModal {
 
     // Setup save handler
     this.saveButton.onclick = () => {
-      this.hide();
+      // Show loading indicator, hide buttons
+      this.buttons.style.display = 'none';
+      this.statusMessage.textContent = 'Processing';
+      this.statusMessage.style.color = '#888';
       if (onSave) onSave(imageDataUrl);
     };
+
     // Setup mint handler
     this.mintButton.onclick = () => {
       this.hide();
