@@ -1,4 +1,5 @@
 // MobileSignatureModal: A contained modal for fast, focused drawing on mobile
+import { SignatureCapture } from './signature-capture.js';
 export class MobileSignatureModal {
   constructor({ onSave, onCancel }) {
     this.onSave = onSave;
@@ -19,7 +20,7 @@ export class MobileSignatureModal {
     this.modal.style.cssText = `
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.75);
+      background: #FC0E49;
       z-index: 10000;
       display: flex;
       align-items: center;
@@ -40,6 +41,19 @@ export class MobileSignatureModal {
       max-width: 400px;
       max-height: 90vh;
     `;
+
+    // Status message
+    this.statusMessage = document.createElement('div');
+    this.statusMessage.style.cssText = `
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 10px;
+      color: #888;
+      text-align: center;
+      min-height: 1.5em;
+      transition: color 0.25s;
+    `;
+    container.appendChild(this.statusMessage);
 
     // Canvas
     this.canvas = document.createElement('canvas');
@@ -86,11 +100,63 @@ export class MobileSignatureModal {
     // Controls
     clearBtn.onclick = () => this.clear();
     cancelBtn.onclick = () => this.hide(true);
-    saveBtn.onclick = () => {
+    saveBtn.onclick = async () => {
+      // Show processing status, disable save
+      this.statusMessage.textContent = 'Processing';
+      this.statusMessage.style.color = '#888';
+      saveBtn.disabled = true;
       const dataUrl = this.canvas.toDataURL('image/png');
-      this.hide();
-      if (this.onSave) this.onSave(dataUrl);
+      try {
+        // Use actual SignatureCapture.saveToGrove logic
+        if (!this.signatureCapture) this.signatureCapture = new SignatureCapture();
+        // Set dummy drawingData so saveToGrove doesn't throw
+        this.signatureCapture.drawingData = [{ x: 0, y: 0, time: 0 }];
+        const fakeCanvasManager = { captureCanvas: () => dataUrl };
+        const result = await this.signatureCapture.saveToGrove(fakeCanvasManager, dataUrl);
+        this.statusMessage.textContent = 'Signed';
+        this.statusMessage.style.color = '#22a722';
+        if (this.resultContainer) this.resultContainer.remove();
+        this.resultContainer = document.createElement('div');
+        this.resultContainer.style.cssText = `
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 12px;
+          margin-top: 16px;
+          word-break: break-all;
+        `;
+        const urlLabel = document.createElement('div');
+        urlLabel.textContent = 'Saved URL:';
+        urlLabel.style.fontWeight = 'bold';
+        const urlLink = document.createElement('a');
+        urlLink.href = result.imageUrl;
+        urlLink.textContent = result.imageUrl;
+        urlLink.target = '_blank';
+        urlLink.style.color = '#7A200C';
+        urlLink.style.textDecoration = 'underline';
+        const downloadBtn = document.createElement('a');
+        downloadBtn.textContent = 'Download';
+        downloadBtn.href = dataUrl;
+        downloadBtn.download = 'signature.png';
+        downloadBtn.className = 'signature-button';
+        downloadBtn.style.marginTop = '8px';
+        downloadBtn.style.background = '#7A200C';
+        downloadBtn.style.color = 'white';
+        downloadBtn.style.padding = '7px 18px';
+        downloadBtn.style.borderRadius = '6px';
+        downloadBtn.style.textAlign = 'center';
+        this.resultContainer.appendChild(urlLabel);
+        this.resultContainer.appendChild(urlLink);
+        this.resultContainer.appendChild(downloadBtn);
+        container.appendChild(this.resultContainer);
+      } catch (error) {
+        this.statusMessage.textContent = 'Failed to save. Please try again.';
+        this.statusMessage.style.color = '#D32F2F';
+        saveBtn.disabled = false;
+      }
     };
+
+
   }
 
   startDraw(e) {
