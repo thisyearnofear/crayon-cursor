@@ -27,6 +27,33 @@ export class MobileSignatureModal {
       justify-content: center;
     `;
 
+    // Close (×) button
+    const closeBtn = document.createElement('button');
+    closeBtn.innerHTML = '&times;';
+    closeBtn.setAttribute('aria-label', 'Close');
+    closeBtn.style.cssText = `
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 36px;
+      height: 36px;
+      background: #fff;
+      color: #FC0E49;
+      border: none;
+      border-radius: 50%;
+      font-size: 2rem;
+      font-weight: bold;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.13);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10001;
+      transition: background 0.2s;
+    `;
+    closeBtn.onpointerdown = e => { e.preventDefault(); e.stopPropagation(); this.hide(true); };
+    this.modal.appendChild(closeBtn);
+
     // Centered container
     const container = document.createElement('div');
     container.style.cssText = `
