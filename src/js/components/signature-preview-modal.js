@@ -154,7 +154,7 @@ export class SignaturePreviewModal {
 
     // Create save button
     this.saveButton = document.createElement('button');
-    this.saveButton.textContent = 'Save to Grove';
+    this.saveButton.textContent = 'Save';
     this.saveButton.className = 'signature-button';
 
     // Create mint button
