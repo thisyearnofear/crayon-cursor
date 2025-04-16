@@ -43,17 +43,18 @@ export class MobileSignatureModal {
 
     // Canvas
     this.canvas = document.createElement('canvas');
-    this.canvas.width = 340;
-    this.canvas.height = 220;
-    this.canvas.style.cssText = 'background:#fff;border:2px solid #FC0E49;border-radius:8px;touch-action:none;';
+    // Match desktop aspect ratio (e.g., 420x260)
+    this.canvas.width = 420;
+    this.canvas.height = 260;
+    this.canvas.style.cssText = 'background:#fff;border:2px solid #FC0E49;border-radius:12rem;touch-action:none;box-shadow:0 2rem 12rem 0 rgba(0,0,0,0.08);';
     container.appendChild(this.canvas);
 
-    // Controls
+    // Controls styled like desktop
     const controls = document.createElement('div');
-    controls.style.cssText = 'margin-top:14px;display:flex;gap:10px;';
+    controls.style.cssText = 'margin-top:18rem;display:flex;gap:16rem;justify-content:center;';
     const saveBtn = document.createElement('button');
     saveBtn.textContent = 'Save';
-    saveBtn.className = 'signature-button';
+    saveBtn.className = 'signature-button save-btn';
     const clearBtn = document.createElement('button');
     clearBtn.textContent = 'Clear';
     clearBtn.className = 'signature-button';
@@ -64,6 +65,37 @@ export class MobileSignatureModal {
     controls.appendChild(clearBtn);
     controls.appendChild(cancelBtn);
     container.appendChild(controls);
+
+    // Add style for modal controls to match desktop
+    const style = document.createElement('style');
+    style.textContent = `
+      .mobile-signature-modal .signature-button {
+        padding: 7rem 13rem;
+        border: none;
+        border-radius: 6rem;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 11rem;
+        transition: background-color 0.2s;
+        margin: 0;
+      }
+      .mobile-signature-modal .save-btn {
+        background: #7A200C;
+        color: white;
+      }
+      .mobile-signature-modal .save-btn:hover {
+        background: #FC0E49;
+        color: white;
+      }
+      .mobile-signature-modal .signature-button:not(.save-btn) {
+        background: #FC0E49;
+        color: white;
+      }
+      .mobile-signature-modal .signature-button:not(.save-btn):hover {
+        background: #e00940;
+      }
+    `;
+    document.head.appendChild(style);
 
     this.modal.appendChild(container);
     document.body.appendChild(this.modal);
@@ -87,10 +119,28 @@ export class MobileSignatureModal {
     clearBtn.onclick = () => this.clear();
     cancelBtn.onclick = () => this.hide(true);
     saveBtn.onclick = () => {
+      // Add crayon texture overlay before saving
+      addCrayonTextureToCanvas(this.canvas);
       const dataUrl = this.canvas.toDataURL('image/png');
       this.hide();
       if (this.onSave) this.onSave(dataUrl);
     };
+
+    // Helper: Add crayon/noise texture overlay
+    function addCrayonTextureToCanvas(canvas) {
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width, h = canvas.height;
+      // Simple noise overlay
+      const noise = ctx.createImageData(w, h);
+      for (let i = 0; i < noise.data.length; i += 4) {
+        const v = 220 + Math.floor(Math.random() * 30); // light gray
+        noise.data[i] = v;
+        noise.data[i+1] = v;
+        noise.data[i+2] = v;
+        noise.data[i+3] = Math.random() < 0.5 ? 12 : 0; // sparse alpha
+      }
+      ctx.putImageData(noise, 0, 0);
+    }
   }
 
   startDraw(e) {
