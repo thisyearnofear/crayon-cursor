@@ -154,6 +154,38 @@ export class SignatureControls {
 
   attachEventListeners() {
     this.startBtn.addEventListener('click', () => {
+      if (window.innerWidth <= 600) {
+        // On mobile, launch the modal instead of recording
+        new MobileSignatureModal({
+          onSave: (dataUrl) => {
+            this.previewModal.show(
+              dataUrl,
+              async (finalImageUrl) => {
+                try {
+                  this.saveBtn.textContent = 'Saving to Grove...';
+                  const result = await this.canvasManager.signatureCapture.saveToGrove(this.canvasManager, finalImageUrl);
+                  alert('Signature uploaded!\n\nDirect URL:\n' + result.imageUrl + '\n\nLens URI:\n' + result.uri);
+                } catch (error) {
+                  alert('Failed to save signature to Grove. Please try again.');
+                } finally {
+                  this.saveBtn.textContent = 'Save';
+                  this.saveBtn.disabled = true;
+                }
+              },
+              async (mintImageUrl) => {
+                try {
+                  await wallet.mint(mintImageUrl);
+                  alert('Mint transaction sent!');
+                } catch (err) {
+                  alert('Minting failed: ' + (err && err.message ? err.message : err));
+                }
+              }
+            );
+          },
+          onCancel: () => {}
+        });
+        return;
+      }
       if (!this.isRecording) {
         this.startRecording();
       } else {
