@@ -59,7 +59,7 @@ export class MobileSignatureModal {
     container.style.cssText = `
       background: #fff;
       border-radius: 16px;
-      padding: 16px;
+      padding: 12px 8px 64px 8px;
       box-shadow: 0 6px 32px rgba(0,0,0,0.18);
       display: flex;
       flex-direction: column;
@@ -67,6 +67,8 @@ export class MobileSignatureModal {
       width: 95vw;
       max-width: 400px;
       max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
     `;
 
     // Status message
@@ -91,10 +93,13 @@ export class MobileSignatureModal {
 
     // Controls
     const controls = document.createElement('div');
-    controls.style.cssText = 'margin-top:14px;display:flex;gap:10px;';
+    controls.style.cssText = 'margin-top:14px;display:flex;gap:10px;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:10001;background:rgba(255,255,255,0.95);padding:8px 0 4px 0;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.07);width:calc(95vw - 16px);max-width:384px;justify-content:center;';
     const saveBtn = document.createElement('button');
     saveBtn.textContent = 'Save';
     saveBtn.className = 'signature-button';
+    const mintBtn = document.createElement('button');
+    mintBtn.textContent = 'Mint';
+    mintBtn.className = 'signature-button';
     const clearBtn = document.createElement('button');
     clearBtn.textContent = 'Clear';
     clearBtn.className = 'signature-button';
@@ -102,6 +107,7 @@ export class MobileSignatureModal {
     cancelBtn.textContent = 'Cancel';
     cancelBtn.className = 'signature-button';
     controls.appendChild(saveBtn);
+    controls.appendChild(mintBtn);
     controls.appendChild(clearBtn);
     controls.appendChild(cancelBtn);
     container.appendChild(controls);
@@ -127,19 +133,29 @@ export class MobileSignatureModal {
     // Controls
     clearBtn.onclick = () => this.clear();
     cancelBtn.onclick = () => this.hide(true);
+    // Store last saved Grove URL for minting
+    let lastSavedGroveUrl = null;
+    let lastSaveResult = null;
     saveBtn.onclick = async () => {
       // Show processing status, disable save
       this.statusMessage.textContent = 'Processing';
       this.statusMessage.style.color = '#888';
       saveBtn.disabled = true;
-      const dataUrl = this.canvas.toDataURL('image/png');
       try {
-        // Use actual SignatureCapture.saveToGrove logic
+        const dataUrl = this.canvas.toDataURL('image/png');
         if (!this.signatureCapture) this.signatureCapture = new SignatureCapture();
-        // Set dummy drawingData so saveToGrove doesn't throw
         this.signatureCapture.drawingData = [{ x: 0, y: 0, time: 0 }];
         const fakeCanvasManager = { captureCanvas: () => dataUrl };
         const result = await this.signatureCapture.saveToGrove(fakeCanvasManager, dataUrl);
+        lastSaveResult = result;
+        // Convert lens://... to https://api.grove.storage/...
+        function lensToHttpUrl(uri) {
+          if (uri && uri.startsWith('lens://')) {
+            return 'https://api.grove.storage/' + uri.slice('lens://'.length);
+          }
+          return uri;
+        }
+        lastSavedGroveUrl = lensToHttpUrl(result.imageUrl || result.uri || result.lensUri);
         this.statusMessage.textContent = 'Signed';
         this.statusMessage.style.color = '#22a722';
         if (this.resultContainer) this.resultContainer.remove();
@@ -156,8 +172,8 @@ export class MobileSignatureModal {
         urlLabel.textContent = 'Saved URL:';
         urlLabel.style.fontWeight = 'bold';
         const urlLink = document.createElement('a');
-        urlLink.href = result.imageUrl;
-        urlLink.textContent = result.imageUrl;
+        urlLink.href = lastSavedGroveUrl;
+        urlLink.textContent = lastSavedGroveUrl;
         urlLink.target = '_blank';
         urlLink.style.color = '#7A200C';
         urlLink.style.textDecoration = 'underline';
@@ -176,117 +192,120 @@ export class MobileSignatureModal {
         this.resultContainer.appendChild(urlLink);
         this.resultContainer.appendChild(downloadBtn);
         container.appendChild(this.resultContainer);
-
-        // --- MINT FORM (MOBILE) ---
-        // Only show mint form if Grove save succeeded
-        const mintForm = document.createElement('form');
-        mintForm.style.cssText = 'margin-top:18px;display:flex;flex-direction:column;align-items:center;gap:10px;width:100%';
-        // Name
-        const nameLabel = document.createElement('label');
-        nameLabel.textContent = 'Name:';
-        nameLabel.style.cssText = 'font-weight:bold;align-self:flex-start;';
-        const nameInput = document.createElement('input');
-        nameInput.type = 'text';
-        nameInput.required = true;
-        nameInput.placeholder = 'Signature Name';
-        nameInput.style.cssText = 'width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;';
-        // Symbol
-        const symbolLabel = document.createElement('label');
-        symbolLabel.textContent = 'Symbol:';
-        symbolLabel.style.cssText = 'font-weight:bold;align-self:flex-start;';
-        const symbolInput = document.createElement('input');
-        symbolInput.type = 'text';
-        symbolInput.required = true;
-        symbolInput.maxLength = 8;
-        symbolInput.placeholder = 'e.g. SIGN';
-        symbolInput.style.cssText = 'width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;text-transform:uppercase;';
-        // Metadata URI
-        const uriLabel = document.createElement('label');
-        uriLabel.textContent = 'Metadata URI:';
-        uriLabel.style.cssText = 'font-weight:bold;align-self:flex-start;';
-        const uriInput = document.createElement('input');
-        uriInput.type = 'text';
-        uriInput.required = true;
-        // Convert lens://... to https://api.grove.storage/...
-        function lensToHttpUrl(uri) {
-          if (uri && uri.startsWith('lens://')) {
-            return 'https://api.grove.storage/' + uri.slice('lens://'.length);
-          }
-          return uri;
-        }
-        uriInput.value = lensToHttpUrl(result.imageUrl || result.uri || result.lensUri);
-        uriInput.readOnly = true;
-        uriInput.style.cssText = 'width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;background:#f9f9f9;';
-        // Payout Address
-        const payoutLabel = document.createElement('label');
-        payoutLabel.textContent = 'Payout Address:';
-        payoutLabel.style.cssText = 'font-weight:bold;align-self:flex-start;';
-        const payoutInput = document.createElement('input');
-        payoutInput.type = 'text';
-        payoutInput.required = true;
-        payoutInput.placeholder = 'Your wallet address';
-        payoutInput.style.cssText = 'width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;';
-        // Mint button
-        const mintBtn = document.createElement('button');
-        mintBtn.type = 'submit';
-        mintBtn.textContent = 'Mint';
-        mintBtn.style.cssText = 'margin-top:6px;padding:10px 28px;border-radius:7px;background:#7A200C;color:#fff;border:none;cursor:pointer;font-size:1.1em;';
-        // Cancel button
-        const cancelBtn = document.createElement('button');
-        cancelBtn.type = 'button';
-        cancelBtn.textContent = 'Cancel';
-        cancelBtn.style.cssText = 'margin-top:6px;padding:9px 22px;border-radius:7px;background:#FC0E49;color:#fff;border:none;cursor:pointer;';
-        cancelBtn.onclick = () => {
-          mintForm.remove();
-        };
-        // Result/status
-        const resultDiv = document.createElement('div');
-        resultDiv.style.cssText = 'margin-top:10px;text-align:center;min-height:1.5em;';
-        // Assemble form
-        mintForm.appendChild(nameLabel);
-        mintForm.appendChild(nameInput);
-        mintForm.appendChild(symbolLabel);
-        mintForm.appendChild(symbolInput);
-        mintForm.appendChild(uriLabel);
-        mintForm.appendChild(uriInput);
-        mintForm.appendChild(payoutLabel);
-        mintForm.appendChild(payoutInput);
-        mintForm.appendChild(mintBtn);
-        mintForm.appendChild(cancelBtn);
-        mintForm.appendChild(resultDiv);
-        this.resultContainer.appendChild(mintForm);
-        // Mint submit handler (async)
-        mintForm.onsubmit = async (e) => {
-          e.preventDefault();
-          mintBtn.disabled = true;
-          cancelBtn.disabled = true;
-          resultDiv.textContent = 'Minting...';
-          resultDiv.style.color = '#7A200C';
-          try {
-            const { createSignatureCoin } = await import('../coins/zora-coins.js');
-            const resultMint = await createSignatureCoin({
-              name: nameInput.value,
-              symbol: symbolInput.value.toUpperCase(),
-              metadataUri: uriInput.value,
-              payoutRecipient: payoutInput.value,
-              account: payoutInput.value,
-              rpcUrl: 'https://mainnet.base.org',
-              platformReferrer: '0x55A5705453Ee82c742274154136Fce8149597058'
-            });
-            resultDiv.innerHTML = `<div style='color:#22a722;font-weight:bold;'>Minted!</div><div><b>Coin Address:</b> <a href='https://basescan.org/address/${resultMint.address}' target='_blank'>${resultMint.address}</a></div><div><b>Tx Hash:</b> <a href='https://basescan.org/tx/${resultMint.hash}' target='_blank'>${resultMint.hash}</a></div>`;
-          } catch (err) {
-            resultDiv.textContent = 'Mint failed: ' + (err.message || err);
-            resultDiv.style.color = '#D32F2F';
-          } finally {
-            mintBtn.disabled = false;
-            cancelBtn.disabled = false;
-          }
-        };
       } catch (error) {
         this.statusMessage.textContent = 'Failed to save. Please try again.';
         this.statusMessage.style.color = '#D32F2F';
         saveBtn.disabled = false;
       }
+    };
+
+    // Mint button handler
+    mintBtn.onclick = () => {
+      // Require save first
+      if (!lastSavedGroveUrl) {
+        this.statusMessage.textContent = 'Please save your signature before minting.';
+        this.statusMessage.style.color = '#FC0E49';
+        return;
+      }
+      // Remove any previous mint form
+      if (this.mintFormContainer) this.mintFormContainer.remove();
+      const mintForm = document.createElement('form');
+      mintForm.style.cssText = 'margin-top:8px;display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;max-width:360px;';
+      // Name
+      const nameLabel = document.createElement('label');
+      nameLabel.textContent = 'Name:';
+      nameLabel.style.cssText = 'font-weight:bold;align-self:flex-start;';
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.required = true;
+      nameInput.placeholder = 'Signature Name';
+      nameInput.style.cssText = 'width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;';
+      // Symbol
+      const symbolLabel = document.createElement('label');
+      symbolLabel.textContent = 'Symbol:';
+      symbolLabel.style.cssText = 'font-weight:bold;align-self:flex-start;';
+      const symbolInput = document.createElement('input');
+      symbolInput.type = 'text';
+      symbolInput.required = true;
+      symbolInput.maxLength = 8;
+      symbolInput.placeholder = 'e.g. SIGN';
+      symbolInput.style.cssText = 'width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;text-transform:uppercase;';
+      // Metadata URI
+      const uriLabel = document.createElement('label');
+      uriLabel.textContent = 'Metadata URI:';
+      uriLabel.style.cssText = 'font-weight:bold;align-self:flex-start;';
+      const uriInput = document.createElement('input');
+      uriInput.type = 'text';
+      uriInput.required = true;
+      uriInput.value = lastSavedGroveUrl;
+      uriInput.readOnly = true;
+      uriInput.style.cssText = 'width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;background:#f9f9f9;';
+      // Payout Address
+      const payoutLabel = document.createElement('label');
+      payoutLabel.textContent = 'Payout Address:';
+      payoutLabel.style.cssText = 'font-weight:bold;align-self:flex-start;';
+      const payoutInput = document.createElement('input');
+      payoutInput.type = 'text';
+      payoutInput.required = true;
+      payoutInput.placeholder = 'Your wallet address';
+      payoutInput.style.cssText = 'width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;';
+      // Mint button
+      const mintFormBtn = document.createElement('button');
+      mintFormBtn.type = 'submit';
+      mintFormBtn.textContent = 'Mint';
+      mintFormBtn.style.cssText = 'margin-top:6px;padding:10px 28px;border-radius:7px;background:#7A200C;color:#fff;border:none;cursor:pointer;font-size:1.1em;width:100%;max-width:340px;';
+      // Cancel button
+      const mintCancelBtn = document.createElement('button');
+      mintCancelBtn.type = 'button';
+      mintCancelBtn.textContent = 'Cancel';
+      mintCancelBtn.style.cssText = 'margin-top:6px;padding:9px 22px;border-radius:7px;background:#FC0E49;color:#fff;border:none;cursor:pointer;width:100%;max-width:340px;';
+      mintCancelBtn.onclick = () => {
+        mintForm.remove();
+      };
+      // Result/status
+      const resultDiv = document.createElement('div');
+      resultDiv.style.cssText = 'margin-top:10px;text-align:center;min-height:1.5em;';
+      // Assemble form
+      mintForm.appendChild(nameLabel);
+      mintForm.appendChild(nameInput);
+      mintForm.appendChild(symbolLabel);
+      mintForm.appendChild(symbolInput);
+      mintForm.appendChild(uriLabel);
+      mintForm.appendChild(uriInput);
+      mintForm.appendChild(payoutLabel);
+      mintForm.appendChild(payoutInput);
+      mintForm.appendChild(mintFormBtn);
+      mintForm.appendChild(mintCancelBtn);
+      mintForm.appendChild(resultDiv);
+      container.appendChild(mintForm);
+      this.mintFormContainer = mintForm;
+      // Mint submit handler (async)
+      mintForm.onsubmit = async (e) => {
+        e.preventDefault();
+        mintFormBtn.disabled = true;
+        mintCancelBtn.disabled = true;
+        resultDiv.textContent = 'Minting...';
+        resultDiv.style.color = '#7A200C';
+        try {
+          const { createSignatureCoin } = await import('../coins/zora-coins.js');
+          const resultMint = await createSignatureCoin({
+            name: nameInput.value,
+            symbol: symbolInput.value.toUpperCase(),
+            metadataUri: uriInput.value,
+            payoutRecipient: payoutInput.value,
+            account: payoutInput.value,
+            rpcUrl: 'https://mainnet.base.org',
+            platformReferrer: '0x55A5705453Ee82c742274154136Fce8149597058'
+          });
+          resultDiv.innerHTML = `<div style='color:#22a722;font-weight:bold;'>Minted!</div><div><b>Coin Address:</b> <a href='https://basescan.org/address/${resultMint.address}' target='_blank'>${resultMint.address}</a></div><div><b>Tx Hash:</b> <a href='https://basescan.org/tx/${resultMint.hash}' target='_blank'>${resultMint.hash}</a></div>`;
+        } catch (err) {
+          resultDiv.textContent = 'Mint failed: ' + (err.message || err);
+          resultDiv.style.color = '#D32F2F';
+        } finally {
+          mintFormBtn.disabled = false;
+          mintCancelBtn.disabled = false;
+        }
+      };
     };
 
 
