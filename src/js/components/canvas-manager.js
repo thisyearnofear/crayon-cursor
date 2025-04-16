@@ -35,68 +35,8 @@ export default class CanvasManager {
     document.addEventListener('mousemove', this.mousemove);
     document.addEventListener('mouseup', this.mouseup);
 
-    this.createMobileCursor();
-
     this.resize();
     this.initCanvas();
-  }
-
-  createMobileCursor() {
-    if (!/Mobi|Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent)) return;
-    // Create cursor dot
-    this.mobileCursor = document.createElement('div');
-    this.mobileCursor.style.position = 'absolute';
-    this.mobileCursor.style.width = '32px';
-    this.mobileCursor.style.height = '32px';
-    this.mobileCursor.style.borderRadius = '50%';
-    this.mobileCursor.style.background = 'rgba(252,14,73,0.82)';
-    this.mobileCursor.style.border = '2px solid #7A200C';
-    this.mobileCursor.style.boxShadow = '0 2px 8px rgba(0,0,0,0.07)';
-    this.mobileCursor.style.zIndex = '1000';
-    this.mobileCursor.style.touchAction = 'none';
-    this.mobileCursor.style.left = (this.width/2-16)+ 'px';
-    this.mobileCursor.style.top = (this.height/2-16)+ 'px';
-    this.el.appendChild(this.mobileCursor);
-
-    let dragging = false;
-    let offsetX = 0;
-    let offsetY = 0;
-    const moveCursor = (clientX, clientY) => {
-      const rect = this.el.getBoundingClientRect();
-      let x = clientX - rect.left;
-      let y = clientY - rect.top;
-      // Clamp to canvas
-      x = Math.max(0, Math.min(this.width, x));
-      y = Math.max(0, Math.min(this.height, y));
-      this.mobileCursor.style.left = (x - 16) + 'px';
-      this.mobileCursor.style.top = (y - 16) + 'px';
-      // Simulate mousemove for drawing
-      this.mousemove({ clientX: x, clientY: y });
-    };
-    this.mobileCursor.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 1) {
-        dragging = true;
-        const touch = e.touches[0];
-        // Simulate mousedown
-        this.mousedown({ clientX: touch.clientX - this.el.getBoundingClientRect().left, clientY: touch.clientY - this.el.getBoundingClientRect().top });
-        moveCursor(touch.clientX, touch.clientY);
-        e.preventDefault();
-      }
-    }, { passive: false });
-    this.mobileCursor.addEventListener('touchmove', (e) => {
-      if (dragging && e.touches.length === 1) {
-        const touch = e.touches[0];
-        moveCursor(touch.clientX, touch.clientY);
-        e.preventDefault();
-      }
-    }, { passive: false });
-    this.mobileCursor.addEventListener('touchend', (e) => {
-      if (dragging) {
-        dragging = false;
-        this.mouseup();
-        e.preventDefault();
-      }
-    }, { passive: false });
   }
 
   resize() {
@@ -215,24 +155,7 @@ export default class CanvasManager {
     this.mouse.delta.c += (this.mouse.delta.t - this.mouse.delta.c) * 0.08;
     this.polygonHover.c += (this.polygonHover.t - this.polygonHover.c) * 0.08;
 
-    // Smooth touch interpolation for active trail
-    if (this.activeTrail && this.touchBuffer && this.touchBuffer.length > 1) {
-      for (let i = 1; i < this.touchBuffer.length; i++) {
-        const prev = this.touchBuffer[i - 1];
-        const curr = this.touchBuffer[i];
-        // Interpolate points between prev and curr
-        const steps = Math.max(2, Math.floor(Math.hypot(curr.x - prev.x, curr.y - prev.y) / 2));
-        for (let s = 1; s <= steps; s++) {
-          const t = s / steps;
-          const x = prev.x + (curr.x - prev.x) * t;
-          const y = prev.y + (curr.y - prev.y) * t;
-          this.activeTrail.push({ x, y });
-          if (this.activeTrail.length > this.maxTrailLength) this.activeTrail.shift();
-        }
-      }
-      // Keep only the last point in buffer for next frame
-      this.touchBuffer = [this.touchBuffer[this.touchBuffer.length - 1]];
-    } else if (this.activeTrail) {
+    if (this.activeTrail) {
       this.activeTrail.push({ x: this.mouse.x.c, y: this.mouse.y.c });
       if (this.activeTrail.length > this.maxTrailLength) this.activeTrail.shift();
     }

@@ -1,4 +1,5 @@
 import { SignaturePreviewModal } from './signature-preview-modal.js';
+import { MobileSignatureModal } from './mobile-signature-modal.js';
 import wallet from './wallet';
 
 export class SignatureControls {
@@ -27,6 +28,45 @@ export class SignatureControls {
     // Create container
     const container = document.createElement('div');
     container.className = 'signature-controls';
+
+    // If mobile, show a 'Sign on Mobile' button
+    if (window.innerWidth <= 600) {
+      const mobileBtn = document.createElement('button');
+      mobileBtn.textContent = 'Sign on Mobile';
+      mobileBtn.className = 'signature-button';
+      mobileBtn.style.marginBottom = '12px';
+      mobileBtn.onclick = () => {
+        new MobileSignatureModal({
+          onSave: (dataUrl) => {
+            this.previewModal.show(
+              dataUrl,
+              async (finalImageUrl) => {
+                try {
+                  this.saveBtn.textContent = 'Saving to Grove...';
+                  const result = await this.canvasManager.signatureCapture.saveToGrove(this.canvasManager, finalImageUrl);
+                  alert('Signature uploaded!\n\nDirect URL:\n' + result.imageUrl + '\n\nLens URI:\n' + result.uri);
+                } catch (error) {
+                  alert('Failed to save signature to Grove. Please try again.');
+                } finally {
+                  this.saveBtn.textContent = 'Save';
+                  this.saveBtn.disabled = true;
+                }
+              },
+              async (mintImageUrl) => {
+                try {
+                  await wallet.mint(mintImageUrl);
+                  alert('Mint transaction sent!');
+                } catch (err) {
+                  alert('Minting failed: ' + (err && err.message ? err.message : err));
+                }
+              }
+            );
+          },
+          onCancel: () => {}
+        });
+      };
+      container.appendChild(mobileBtn);
+    }
     container.innerHTML = `
       <div class="timer">00:10</div>
       <div class="hint">Press 'R' to start/stop recording</div>
