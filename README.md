@@ -248,7 +248,8 @@ This project is designed for a split deployment architecture:
 
 4. **Deploy**
    - Northflank will build and deploy your backend
-   - The backend API will be available at your Northflank URL
+   - The backend API will be available at your Northflank URL (e.g., https://p01--signature--sqrfq849w2vt.code.run)
+   - Make note of this URL as you'll need it for the frontend configuration
 
 ### Configuration Files
 
