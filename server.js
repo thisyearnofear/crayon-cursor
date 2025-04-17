@@ -55,7 +55,9 @@ app.use(
       process.env.NODE_ENV === "production"
         ? [
             "https://signature-opal.vercel.app",
+            "https://signature-opal.netlify.app", // Add Netlify domain
             /\.vercel\.app$/,
+            /\.netlify\.app$/, // Add Netlify subdomain pattern
             /\.zora\.co$/,
             process.env.FRONTEND_URL, // Allow the frontend URL from environment variable
           ].filter(Boolean) // Remove undefined values
@@ -63,6 +65,21 @@ app.use(
     credentials: true,
   })
 );
+
+// Add a pre-flight route handler for CORS
+app.options("*", cors());
+
+// Add CORS headers to all responses
+app.use((req, res, next) => {
+  // Allow requests from any origin
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+  next();
+});
 
 // Parse JSON bodies
 app.use(express.json());
@@ -172,7 +189,20 @@ app.post("/api/pin-json", async (req, res) => {
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", message: "Proxy server is running" });
+  // Set explicit CORS headers for the health check endpoint
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
+
+  res.json({
+    status: "ok",
+    message: "Proxy server is running",
+    cors: "enabled",
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // IPFS content fetch endpoint
