@@ -44,8 +44,10 @@ export async function mintSignature({
     // Step 2.5: Validate metadata with our server
     onProgress("Validating metadata...");
     try {
+      // Use environment variable for API URL if available, otherwise fallback to localhost
+      const apiBaseUrl = process.env.VITE_API_URL || "http://localhost:3000";
       const validateResponse = await fetch(
-        "http://localhost:3000/api/validate-metadata",
+        `${apiBaseUrl}/api/validate-metadata`,
         {
           method: "POST",
           headers: {

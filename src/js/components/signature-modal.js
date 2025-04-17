@@ -583,7 +583,12 @@ export class SignatureModal extends ModalBase {
       try {
         // Check if the proxy server is running
         try {
-          const proxyCheck = await fetch("http://localhost:3000/api/health", {
+          // Use environment variable for API URL if available, otherwise fallback to localhost
+          const apiBaseUrl =
+            process.env.VITE_API_URL || "http://localhost:3000";
+          console.log("Using API URL:", apiBaseUrl);
+
+          const proxyCheck = await fetch(`${apiBaseUrl}/api/health`, {
             method: "GET",
           });
           if (!proxyCheck.ok) {
@@ -591,10 +596,14 @@ export class SignatureModal extends ModalBase {
               "Proxy server is not responding. Please make sure it's running."
             );
           }
+          console.log("Proxy server health check successful");
         } catch (proxyError) {
           console.error("Proxy server check failed:", proxyError);
+          // Use environment variable for API URL in the error message
+          const apiBaseUrl =
+            process.env.VITE_API_URL || "http://localhost:3000";
           throw new Error(
-            "Cannot connect to proxy server. Please make sure it's running at http://localhost:3000"
+            `Cannot connect to proxy server. Please make sure it's running at ${apiBaseUrl}`
           );
         }
 

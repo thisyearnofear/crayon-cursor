@@ -221,6 +221,8 @@ This project is designed for a split deployment architecture:
 3. **Configure environment variables**
 
    - Add `VITE_API_URL` pointing to your Northflank backend URL
+   - For example: `VITE_API_URL=https://p01--signature--sqrfq849w2vt.code.run`
+   - Make sure to include the `https://` prefix
 
 4. **Deploy**
    - Vercel will build and deploy the frontend
