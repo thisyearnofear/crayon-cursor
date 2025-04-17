@@ -6,6 +6,7 @@ import CanvasManager from "../components/canvas-manager";
 import { SignatureControls } from "../components/signature-controls.js";
 import wallet from "../components/wallet";
 import { setupEnvironment } from "../utils/env.js";
+import "../utils/wallet-bridge.js"; // Import the wallet bridge to make it available globally
 
 export default class Index {
   constructor() {
@@ -28,21 +29,38 @@ export default class Index {
     const walletDiv = document.createElement("div");
     walletDiv.id = "wallet-ui";
     walletDiv.innerHTML = `
-      <button id="wallet-connect">Connect Wallet</button>
+      <div id="wallet-button-container"></div>
       <span id="wallet-status" style="display:none;"></span>
       <span id="wallet-profile" style="display:none;"></span>
     `;
     document.body.appendChild(walletDiv);
-    const connectBtn = document.getElementById("wallet-connect");
+
+    // Use the new wallet button component
+    const buttonContainer = document.getElementById("wallet-button-container");
     const statusSpan = document.getElementById("wallet-status");
     const profileSpan = document.getElementById("wallet-profile");
-    connectBtn.onclick = async () => {
-      await wallet.connect();
-    };
+
+    // Create the wallet button
+    if (wallet.createConnectButton) {
+      wallet.createConnectButton({
+        container: "wallet-button-container",
+        onConnect: () => {
+          console.log("Wallet connected from main UI");
+        },
+      });
+    } else {
+      // Fallback to old method
+      buttonContainer.innerHTML =
+        '<button id="wallet-connect">Connect Wallet</button>';
+      const connectBtn = document.getElementById("wallet-connect");
+      connectBtn.onclick = async () => {
+        await wallet.connect();
+      };
+    }
     function updateProfileUI({ ensName, avatar, account }) {
       if (ensName || account) {
         walletDiv.classList.remove("disconnected");
-        connectBtn.style.display = "none";
+        buttonContainer.style.display = "none";
         statusSpan.style.display = "none";
         profileSpan.style.display = "";
         profileSpan.innerHTML = `
@@ -52,7 +70,7 @@ export default class Index {
               : ""
           }
           <span style="vertical-align:middle;font-weight:600;">${
-            ensName ? ensName : account.slice(0, 6) + "..." + account.slice(-4)
+            ensName || account.slice(0, 6) + "..." + account.slice(-4)
           }</span>
           <button id="wallet-disconnect" class="wallet-disconnect-btn">Disconnect</button>
         `;
@@ -72,7 +90,7 @@ export default class Index {
           }
         }, 0);
       } else {
-        connectBtn.style.display = "";
+        buttonContainer.style.display = "";
         statusSpan.style.display = "none";
         profileSpan.style.display = "none";
         walletDiv.classList.add("disconnected");

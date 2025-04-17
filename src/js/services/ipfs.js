@@ -13,7 +13,9 @@ export async function pinFileWithPinata(file) {
 
     // Use our proxy server instead of calling Pinata directly
     // This keeps our Pinata JWT secure on the server
-    const apiUrl = "http://localhost:3000/api/pin-file";
+    // Use environment variable for API URL if available, otherwise fallback to localhost
+    const apiBaseUrl = process.env.VITE_API_URL || "http://localhost:3000";
+    const apiUrl = `${apiBaseUrl}/api/pin-file`;
 
     const res = await fetch(apiUrl, {
       method: "POST",
@@ -42,7 +44,9 @@ export async function pinJsonWithPinata(json) {
   try {
     // Use our proxy server instead of calling Pinata directly
     // This keeps our Pinata JWT secure on the server
-    const apiUrl = "http://localhost:3000/api/pin-json";
+    // Use environment variable for API URL if available, otherwise fallback to localhost
+    const apiBaseUrl = process.env.VITE_API_URL || "http://localhost:3000";
+    const apiUrl = `${apiBaseUrl}/api/pin-json`;
 
     const res = await fetch(apiUrl, {
       method: "POST",
@@ -75,7 +79,18 @@ export function getIpfsGatewayUrl(ipfsUri) {
 
   if (ipfsUri.startsWith("ipfs://")) {
     const hash = ipfsUri.replace("ipfs://", "");
-    return `https://ipfs.io/ipfs/${hash}`;
+
+    // Check if we have a custom Pinata gateway in the environment
+    const pinataGateway = window.ENV?.PINATA_GATEWAY;
+    if (pinataGateway) {
+      return `https://${pinataGateway}/ipfs/${hash}`;
+    }
+
+    // Use Pinata gateway which should be more reliable
+    return `https://gateway.pinata.cloud/ipfs/${hash}`;
+    // Alternative gateways:
+    // return `https://ipfs.io/ipfs/${hash}`;
+    // return `https://dweb.link/ipfs/${hash}`;
   }
 
   return ipfsUri;

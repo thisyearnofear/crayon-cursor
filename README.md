@@ -1,122 +1,290 @@
-# Signature
+# Signature Opal
 
-An interactive web application that lets users create unique digital signatures using a stop-motion crayon effect. Built on top of the p5 Brush implementation by [Jorge Toloza](http://jorgetoloza.co), with added blockchain integration for minting signatures as NFTs.
+An interactive web application that lets users create unique digital signatures using a stop-motion crayon effect. Built on top of the p5 Brush implementation by [Jorge Toloza](http://jorgetoloza.co), with advanced blockchain integration for minting signatures as NFTs through the ZORA protocol by Papa.
 
-## Current Features
+## Overview
+
+Signature Opal combines creative digital artistry with blockchain technology, enabling users to:
+
+- Create beautiful, organic signatures with a stop-motion crayon effect
+- Capture their unique drawing style as digital collectibles
+- Mint signatures as NFTs through various blockchain options
+- Trade and collect signature tokens using the ZORA protocol
+
+## Core Features
+
+### Drawing Experience
 
 - Interactive canvas with stop-motion crayon effect
-- Real-time drawing with mouse interactions
-- WebGL-powered p5.js brush system
+- Real-time drawing with natural mouse/touch interactions
+- WebGL-powered p5.js brush system for smooth rendering
 - Organic, hand-drawn animation style
+- Timed drawing sessions for signature creation
+- Responsive design for both desktop and mobile experiences
 
-![Image Title](cover.jpg)
+### Blockchain Integration
 
-[Tutorial on Codrops](https://tympanus.net/codrops/?p=)
+- Multiple minting options:
+  - ERC-721: One-of-one unique signature NFTs
+  - ERC-1155: Multiple editions of the same signature
+  - ZORA Protocol Coins: Create a token around your signature
+- Drawing data capture and on-chain storage
+- Preview and confirmation system before minting
+- Wallet connection functionality for major providers
+- Transaction status tracking and confirmation
 
-[Demo](http://tympanus.net/Development/.../)
+### Technical Stack
 
-## Installation
+- Frontend: Vanilla JavaScript with modern ES6+ features
+- Drawing: p5.js with WebGL for high-performance rendering
+- Storage: IPFS via Pinata for decentralized asset storage
+- Blockchain: ZORA Protocol SDK for NFT creation and trading
+- Building: Webpack/npm-based development workflow
 
-Install dependencies:
+## Installation & Development
+
+### Prerequisites
+
+- Node.js (v14+)
+- NPM or Yarn
+- Modern web browser with JavaScript enabled
+
+### Setup
+
+1. Clone the repository:
+
+```
+git clone https://github.com/thisyearnofear/signature-opal.git
+cd signature-opal
+```
+
+2. Install dependencies:
 
 ```
 npm install
 ```
 
----
+3. Set up environment variables (create a `.env` file):
 
-## ZORA Coins SDK Integration Plan
+```
+# Pinata API JWT for IPFS storage (server-side only)
+PINATA_JWT=your_pinata_jwt_here
 
-To safely add ERC-20 minting for user signatures using the ZORA Coins SDK, we will follow a three-phase, low-risk approach. The core principle is to keep all blockchain/minting logic modular and completely separate from the drawing/canvas (p5.js) code.
+```
 
-_Note: The project is called **Signature Opal**. All defaults and references have been updated accordingly._
+### Development
 
-### **Phase 1: Foundation & Isolation**
-- **Install SDKs:** Add `@zoralabs/coins-sdk` and `viem` as dependencies.
-- **Create Blockchain Module:** Implement all ZORA coin creation and trading logic in a dedicated module (e.g., `src/js/coins/`), with no dependencies on p5.js or canvas logic.
-- **Integrate Wallet Detection:** Ensure wallet connection logic is robust and isolated from drawing code.
-- **No UI/UX changes to drawing or canvas at this stage.**
-
-### **Phase 2: UI Integration (Non-Disruptive)**
-- **Add Mint Button:** Add a "Mint" button to the UI, visually and functionally separated from the drawing/canvas area.
-- **Trigger Mint Flow:** On click, the button will invoke the blockchain module, passing only the signature metadata URI and user wallet address.
-- **Status Feedback:** Display transaction progress, errors, and results in a modal or sidebar, not on the canvas.
-- **No changes to p5.js or animation logic.**
-
-### **Phase 3: Testing, Validation & Rollout**
-- **Test End-to-End:** Thoroughly test minting on testnets and mainnet, ensuring the drawing experience is never blocked or slowed by blockchain operations.
-- **Error Handling:** Add robust error and edge-case handling for wallet, network, and SDK issues.
-- **Document Usage:** Update documentation for contributors and users, clarifying that minting is optional and isolated from the creative experience.
-- **Monitor & Iterate:** Monitor for issues post-launch and further decouple logic if needed.
-
----
-
-### **Phase 4: Trading, Aggregation & Platform Dashboard (Planned)**
-- **Trading:** Integrate ZORA Coins SDK trading functions to allow users to buy/sell coins minted via Signature Opal.
-- **Aggregation:** Track all coins minted with the platformReferrer address (0x55A5705453Ee82c742274154136Fce8149597058) to display, aggregate, and analyze platform-created coins.
-- **Platform Fees:** Ensure all minting and trading calls include the platformReferrer address so Signature Opal can accrue and later withdraw platform fees.
-- **Dashboard:** Build a dashboard for platform admins to view, filter, and manage all Signature Opal coins and trading activity.
-
-**Current Focus:**
-> The immediate priority is to deliver a seamless, performant, in-modal minting experience for user signatures. Trading and aggregation features will be implemented after minting is stable and user-tested.
-
-**Key Principle:**
-> All blockchain and minting logic must remain strictly separated from the drawing/canvas (p5.js) codebase. The drawing experience should never be impacted by blockchain/network events.
-
----
-
-Compile start a local server:
+Run the development server:
 
 ```
 npm run dev
 ```
 
-Create the build:
+For both frontend and backend together:
+
+```
+npm run dev:all
+```
+
+### Building for Production
+
+Create an optimized build:
 
 ```
 npm run build
 ```
 
-## Planned On-chain Features
+## ZORA Coins SDK Integration Plan
 
-Upcoming integration with the Zora Protocol will allow users to mint their signatures as NFTs:
+The blockchain integration follows a carefully planned, modular approach to ensure the drawing experience remains fluid while providing robust NFT minting capabilities.
 
-### Core Features
-- Timed drawing sessions for signature creation
-- Capture and store drawing data on-chain
-- Multiple minting options:
-  - ERC-721: One-of-one unique signature NFTs
-  - ERC-1155: Multiple editions of the same signature
-  - Zora Protocol Coins: Create a token around your signature
+### Coming Soon: Trading, Aggregation & Platform Dashboard
 
-### Technical Implementation Plan
-1. **Drawing Session**
-   - Add timer functionality
-   - Implement drawing data capture
-   - Preview and confirmation system
+- **Trading:** Integrate ZORA Coins SDK trading functions for buying/selling coins
+- **Aggregation:** Track platform-created coins with platformReferrer address (0x55A5705453Ee82c742274154136Fce8149597058)
+- **Dashboard:** Build admin dashboard for coin management and analytics
 
-2. **Blockchain Integration**
-   - Connect wallet functionality
-   - Zora Protocol SDK integration
-   - Smart contract deployment for minting options
+## Code Architecture
 
-3. **User Interface**
-   - Timer controls and display
-   - Minting options selection
-   - Transaction status and confirmation
+The codebase is organized into a modular architecture designed for maintainability and separation of concerns:
 
-4. **Storage**
-   - Drawing data storage on IPFS
-   - Metadata generation for NFTs
-   - On-chain signature verification
+### Directory Structure
 
-## Misc
+```
+src/
+├── js/
+│   ├── components/       # UI Components
+│   │   ├── modal-base.js           # Base modal component
+│   │   ├── signature-modal.js      # Unified signature modal
+│   │   └── signature-controls.js   # Controls for signature recording
+│   ├── utils/            # Shared utilities
+│   │   ├── dom.js        # DOM manipulation utilities
+│   │   ├── image.js      # Image manipulation utilities
+│   │   └── metadata.js   # Metadata building utilities
+│   ├── services/         # API and blockchain services
+│   │   ├── blockchain.js # Blockchain interactions
+│   │   ├── ipfs.js       # IPFS/Pinata service
+│   │   └── storage.js    # Grove storage service
+│   ├── coins/            # Blockchain coin-related code
+│   │   └── zora-coins.js # ZORA Coins SDK integration
+│   └── pages/            # Page-specific code
+│       └── index.js      # Main entry point
+├── styles/
+│   ├── components/       # Component-specific styles
+│   │   ├── buttons.scss  # Button styles
+│   │   ├── modals.scss   # Modal styles
+│   │   └── signature.scss # Signature component styles
+│   ├── utils/            # Style utilities
+│   │   └── mixins.scss   # SCSS mixins
+│   └── main.scss         # Main style file
+└── server/
+    └── proxy.js          # Backend proxy for secure API calls
+```
 
-Follow Jorge Toloza: [Website](https://jorgetoloza.co), [Instagram](https://instagram.com/jorgecapillo), [X](https://twitter.com/jorgecapillo), [GitHub](https://github.com/jorgecapillo) 
+### Key Components
 
-Follow Codrops: [X](http://www.X.com/codrops), [Facebook](http://www.facebook.com/codrops), [GitHub](https://github.com/codrops), [Instagram](https://www.instagram.com/codropsss/)
+#### Modal Components
 
-## License
-[MIT](LICENSE)
+- **ModalBase**: Base class with common modal functionality
+- **SignatureModal**: Unified component handling both preview and mobile drawing
 
-Made with :blue_heart:  by [Jorge Toloza](https://jorgetoloza.co) and [Codrops](http://www.codrops.com)
+#### Utility Modules
+
+- **dom.js**: Helper functions for UI elements
+- **image.js**: Image processing utilities
+- **metadata.js**: NFT metadata creation following Zora Coins standard
+
+#### Service Modules
+
+- **blockchain.js**: Blockchain interaction service
+- **ipfs.js**: IPFS/Pinata integration
+- **storage.js**: Local storage service
+
+## Minting Flow
+
+The minting process follows a consistent workflow across devices:
+
+1. **Create Signature**: User draws (mobile) or records (desktop) their signature
+2. **Review**: User reviews signature in the modal
+3. **Mint**: User clicks "Mint" button in the modal
+4. **Configure**: User enters details (name, symbol, payout address)
+5. **Upload**: Signature image uploaded to IPFS via Pinata
+6. **Metadata**: JSON metadata created following EIP-7572 standard:
+   ```json
+   {
+     "name": "Signature Opal",
+     "description": "A unique signature minted as an NFT.",
+     "image": "ipfs://bafkreifch6stfh3fn3nqv5tpxnknjpo7zulqav55f2b5pryadx6hldldwe",
+     "properties": {
+       "category": "signature",
+       "type": "image"
+     }
+   }
+   ```
+7. **Blockchain**: NFT minted using ZORA Coins SDK
+8. **Confirmation**: User receives confirmation and link to view NFT
+
+## Backend Security
+
+A secure approach for handling sensitive API calls:
+
+1. **Express Proxy**: Backend server mediates API calls to Pinata
+2. **Secret Management**: API keys and tokens secured server-side
+3. **File Upload Handling**: Proper multipart form handling for uploads
+4. **Error Management**: Robust error handling and user feedback
+
+## RPC Configuration
+
+Reliable blockchain connectivity with:
+
+1. Alchemy RPC URLs for Base network
+2. Fallback mechanisms for wallet providers
+3. Error handling for network issues
+4. Performance optimization for mobile devices
+
+## Deployment to Vercel
+
+This project is configured for deployment on Vercel with both frontend and backend components.
+
+### Setup Instructions
+
+1. **Fork or clone the repository to your GitHub account**
+
+2. **Create a new project on Vercel**
+
+   - Connect your GitHub repository
+   - Vercel will automatically detect the configuration
+
+3. **Configure environment variables**
+
+   - Add the `PINATA_JWT` as an environment variable in Vercel
+   - You can use Vercel's UI to add this as a secret
+
+4. **Deploy**
+   - Vercel will build and deploy both the frontend and backend
+   - The backend API will be available at `/api/*` endpoints
+
+### Vercel Configuration
+
+The project includes a `vercel.json` file that configures:
+
+- The build process for both frontend and backend
+- Routing for API endpoints and static assets
+- Environment variable handling
+
+## Troubleshooting
+
+Common issues and solutions:
+
+1. **Wallet Connection Issues**
+
+   - Make sure you have a compatible wallet extension installed
+   - Try refreshing the page or reconnecting the wallet
+   - Check if your wallet is properly connected to the Base network
+
+2. **Drawing Performance**
+
+   - On older devices, try reducing the canvas size
+   - Close other browser tabs to free up resources
+
+3. **Minting Errors**
+   - Check your wallet has enough ETH for gas fees
+   - Verify you're connected to the correct network (Base)
+   - If you see error code `0x4ab38e08`, this is a contract deployment error (see Known Issues section)
+
+## Known Issues
+
+### Contract Deployment Error (0x4ab38e08)
+
+We're currently experiencing an issue with the Zora Coins contract deployment that returns error code `0x4ab38e08`. This appears to be related to the contract interaction rather than our implementation.
+
+**Details:**
+
+- Error occurs during the `createCoin` function call in the Zora Coins SDK
+- The error persists regardless of the name or symbol used
+- All metadata validation passes successfully
+- The wallet is properly connected to the Base network
+
+**Possible causes:**
+
+- The contract may have specific requirements not documented in the SDK
+- There might be an issue with the contract parameters we're providing
+- The contract might have been updated since the SDK version we're using
+
+**Workarounds attempted:**
+
+- Generated unique symbols to avoid collisions
+- Added additional validation for all parameters
+- Ensured proper network connection to Base
+- Verified metadata follows the EIP-7572 standard
+
+If you're from the Zora team and can help diagnose this issue, please check the contract interaction in `src/js/coins/zora-coins.js` and the error handling in the same file.
+
+## Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request

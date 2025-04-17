@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
   return {
     root: "src/",
     publicDir: "../static/",
-    base: "./",
+    base: "/",
     server: {
       host: true,
       open: !isCodeSandbox,
@@ -26,6 +26,14 @@ export default defineConfig(({ mode }) => {
           index: resolve(__dirname, "src/index.html"),
         },
       },
+    },
+    define: {
+      // Define environment variables for client-side code
+      "process.env.VITE_API_URL": JSON.stringify(
+        process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : "http://localhost:3000"
+      ),
     },
   };
 });

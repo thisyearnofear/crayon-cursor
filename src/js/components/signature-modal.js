@@ -267,6 +267,124 @@ export class SignatureModal extends ModalBase {
     mintForm.className = "mint-form";
     mintForm.style.cssText = "margin-top: 15px; width: 100%;";
 
+    // Add a header with wallet notice
+    const formHeader = document.createElement("div");
+    formHeader.innerHTML = `
+      <h3 style="margin-bottom: 10px;">Mint your signature as a Zora Coin</h3>
+      <p style="margin-bottom: 15px;">Your signature will be minted on the Base network.</p>
+      <p style="color: #7A200C; font-size: 12px; margin-bottom: 15px;">You'll need to approve the transaction in your wallet.</p>
+    `;
+    mintForm.appendChild(formHeader);
+
+    // Check if wallet is connected
+    // Try the wallet bridge first, then fall back to direct wallet access
+    const isWalletConnected = window.walletBridge
+      ? window.walletBridge.isConnected()
+      : window.wallet && window.wallet.getAccount && window.wallet.getAccount();
+
+    // Add wallet connection section if not connected
+    if (!isWalletConnected) {
+      const walletWarning = document.createElement("div");
+      walletWarning.style.cssText =
+        "background-color: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-align: center;";
+      walletWarning.innerHTML = `
+        <p style="margin-bottom: 10px;"><strong>Wallet Not Connected</strong></p>
+        <p style="margin-bottom: 10px;">You need to connect your wallet before minting.</p>
+      `;
+
+      // Create a container for the wallet button
+      const walletBtnContainer = document.createElement("div");
+      walletBtnContainer.style.cssText =
+        "margin: 10px auto; text-align: center;";
+
+      // Use the wallet bridge or direct wallet access
+      if (window.walletBridge) {
+        // Create a simple button that uses the wallet bridge
+        const connectBtn = document.createElement("button");
+        connectBtn.textContent = "Connect Wallet";
+        connectBtn.style.cssText =
+          "background: #7A200C; color: white; padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer;";
+        connectBtn.onclick = async () => {
+          try {
+            connectBtn.disabled = true;
+            connectBtn.textContent = "Connecting...";
+            const account = await window.walletBridge.connect();
+            walletWarning.innerHTML = `<p style="color: #22a722;"><strong>Wallet Connected!</strong> ${account.slice(
+              0,
+              6
+            )}...${account.slice(-4)} is now connected.</p>`;
+            setTimeout(() => {
+              walletWarning.style.display = "none";
+            }, 3000);
+          } catch (error) {
+            console.error("Error connecting wallet:", error);
+            walletWarning.innerHTML = `<p style="color: #D32F2F;"><strong>Error:</strong> ${
+              error.message || "Failed to connect wallet"
+            }</p>`;
+          } finally {
+            connectBtn.disabled = false;
+            connectBtn.textContent = "Connect Wallet";
+          }
+        };
+        connectBtn.style.margin = "0 auto";
+        walletBtnContainer.appendChild(connectBtn);
+      } else if (window.wallet && window.wallet.createConnectButton) {
+        // Fall back to the wallet's built-in connect button
+        const connectBtn = window.wallet.createConnectButton({
+          onConnect: (account) => {
+            walletWarning.innerHTML = `<p style="color: #22a722;"><strong>Wallet Connected!</strong> ${account.slice(
+              0,
+              6
+            )}...${account.slice(-4)} is now connected.</p>`;
+            setTimeout(() => {
+              walletWarning.style.display = "none";
+            }, 3000);
+          },
+          onError: (error) => {
+            walletWarning.innerHTML = `<p style="color: #D32F2F;"><strong>Error:</strong> ${
+              error.message || "Failed to connect wallet"
+            }</p>`;
+          },
+        });
+
+        connectBtn.style.margin = "0 auto";
+        walletBtnContainer.appendChild(connectBtn);
+      } else {
+        // Fallback if wallet button creation fails
+        const connectWalletBtn = createButton({
+          text: "Connect Wallet",
+          className: "signature-button",
+          style:
+            "background: #7A200C; color: white; padding: 8px 16px; border-radius: 6px; margin: 0 auto; display: block;",
+          onClick: async () => {
+            try {
+              if (window.wallet && window.wallet.connect) {
+                await window.wallet.connect();
+                walletWarning.innerHTML =
+                  '<p style="color: #22a722;"><strong>Wallet Connected!</strong> You can now mint your signature.</p>';
+                setTimeout(() => {
+                  walletWarning.style.display = "none";
+                }, 3000);
+              } else {
+                walletWarning.innerHTML =
+                  '<p style="color: #D32F2F;"><strong>Error:</strong> Wallet provider not found. Please refresh the page and try again.</p>';
+              }
+            } catch (error) {
+              console.error("Error connecting wallet:", error);
+              walletWarning.innerHTML = `<p style="color: #D32F2F;"><strong>Error:</strong> ${
+                error.message || "Failed to connect wallet"
+              }</p>`;
+            }
+          },
+        });
+
+        walletBtnContainer.appendChild(connectWalletBtn);
+      }
+
+      walletWarning.appendChild(walletBtnContainer);
+      mintForm.appendChild(walletWarning);
+    }
+
     // Form inputs
     const nameInput = createFormInput({
       id: "mint-name",
@@ -362,12 +480,124 @@ export class SignatureModal extends ModalBase {
 
     // Mint button handler
     mintFormBtn.onclick = async () => {
+      // Check if wallet is connected first
+      // Try the wallet bridge first, then fall back to direct wallet access
+      const isWalletConnected = window.walletBridge
+        ? window.walletBridge.isConnected()
+        : window.wallet &&
+          window.wallet.getAccount &&
+          window.wallet.getAccount();
+
+      if (!isWalletConnected) {
+        resultDiv.innerHTML = `
+          <div style='color:#D32F2F;font-weight:bold;margin-bottom:10px;'>Wallet Not Connected</div>
+          <div style='margin-bottom:10px;'>Please connect your wallet before minting.</div>
+        `;
+
+        // Add a connect button directly in the error message
+        const connectBtnContainer = document.createElement("div");
+        connectBtnContainer.style.cssText =
+          "margin: 15px auto; text-align: center;";
+
+        if (window.walletBridge) {
+          // Create a simple button that uses the wallet bridge
+          const connectBtn = document.createElement("button");
+          connectBtn.textContent = "Connect Wallet";
+          connectBtn.style.cssText =
+            "background: #7A200C; color: white; padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer;";
+          connectBtn.onclick = async () => {
+            try {
+              connectBtn.disabled = true;
+              connectBtn.textContent = "Connecting...";
+              await window.walletBridge.connect();
+              resultDiv.innerHTML =
+                '<div style="color:#22a722;">Wallet connected! You can now mint.</div>';
+              setTimeout(() => {
+                mintFormBtn.disabled = false;
+                mintCancelBtn.disabled = false;
+                resultDiv.textContent = "";
+              }, 2000);
+            } catch (error) {
+              console.error("Error connecting wallet:", error);
+              resultDiv.innerHTML = `<div style="color:#D32F2F;">Error: ${
+                error.message || "Failed to connect wallet"
+              }</div>`;
+            } finally {
+              connectBtn.disabled = false;
+              connectBtn.textContent = "Connect Wallet";
+            }
+          };
+          connectBtn.style.margin = "0 auto";
+          connectBtnContainer.appendChild(connectBtn);
+        } else if (window.wallet && window.wallet.createConnectButton) {
+          const connectBtn = window.wallet.createConnectButton({
+            onConnect: () => {
+              // Retry the mint operation after connecting
+              resultDiv.innerHTML =
+                '<div style="color:#22a722;">Wallet connected! You can now mint.</div>';
+              setTimeout(() => {
+                mintFormBtn.disabled = false;
+                mintCancelBtn.disabled = false;
+                resultDiv.textContent = "";
+              }, 2000);
+            },
+          });
+          connectBtn.style.margin = "0 auto";
+          connectBtnContainer.appendChild(connectBtn);
+        } else {
+          const fallbackBtn = document.createElement("button");
+          fallbackBtn.textContent = "Connect Wallet";
+          fallbackBtn.style.cssText =
+            "background: #7A200C; color: white; padding: 8px 16px; border-radius: 6px; border: none;";
+          fallbackBtn.onclick = async () => {
+            try {
+              if (window.wallet && window.wallet.connect) {
+                await window.wallet.connect();
+                resultDiv.innerHTML =
+                  '<div style="color:#22a722;">Wallet connected! You can now mint.</div>';
+                setTimeout(() => {
+                  mintFormBtn.disabled = false;
+                  mintCancelBtn.disabled = false;
+                  resultDiv.textContent = "";
+                }, 2000);
+              }
+            } catch (error) {
+              console.error("Error connecting wallet:", error);
+              resultDiv.innerHTML = `<div style="color:#D32F2F;">Error: ${
+                error.message || "Failed to connect wallet"
+              }</div>`;
+            }
+          };
+          connectBtnContainer.appendChild(fallbackBtn);
+        }
+
+        resultDiv.appendChild(connectBtnContainer);
+        return;
+      }
+
       resultDiv.textContent = "Minting...";
       resultDiv.style.color = "#7A200C";
       mintFormBtn.disabled = true;
       mintCancelBtn.disabled = true;
 
       try {
+        // Check if the proxy server is running
+        try {
+          const proxyCheck = await fetch("http://localhost:3000/api/health", {
+            method: "GET",
+          });
+          if (!proxyCheck.ok) {
+            throw new Error(
+              "Proxy server is not responding. Please make sure it's running."
+            );
+          }
+        } catch (proxyError) {
+          console.error("Proxy server check failed:", proxyError);
+          throw new Error(
+            "Cannot connect to proxy server. Please make sure it's running at http://localhost:3000"
+          );
+        }
+
         // Prepare the image
         const optimizedImageDataUrl = await prepareImageForMinting();
 
@@ -384,6 +614,77 @@ export class SignatureModal extends ModalBase {
         if (symbol.length > 4)
           throw new Error("Symbol should be 4 characters or less");
 
+        // Log the values for debugging
+        console.log("Minting with values:", {
+          name,
+          symbol,
+          payoutRecipient,
+          description,
+        });
+
+        // Set up a progress update function
+        const updateProgress = (message) => {
+          resultDiv.innerHTML = `
+            <div style='margin-bottom:10px;'>${message}</div>
+            <div class='progress-bar'>
+              <div class='progress-bar-inner'></div>
+            </div>
+          `;
+
+          // Add a simple progress bar style if it doesn't exist
+          if (!document.getElementById("progress-bar-style")) {
+            const style = document.createElement("style");
+            style.id = "progress-bar-style";
+            style.textContent = `
+              .progress-bar {
+                width: 100%;
+                height: 10px;
+                background-color: #f0f0f0;
+                border-radius: 5px;
+                overflow: hidden;
+              }
+              .progress-bar-inner {
+                height: 100%;
+                width: 0%;
+                background-color: #7A200C;
+                animation: progress 2s infinite linear;
+              }
+              @keyframes progress {
+                0% { width: 0%; }
+                50% { width: 100%; }
+                100% { width: 0%; }
+              }
+            `;
+            document.head.appendChild(style);
+          }
+        };
+
+        // Check network before minting
+        try {
+          const { isConnectedToBase, switchToBase } = await import(
+            "../utils/network.js"
+          );
+          const isBase = await isConnectedToBase();
+
+          if (!isBase) {
+            updateProgress("Switching to Base network...");
+            const switched = await switchToBase();
+            if (!switched) {
+              throw new Error(
+                "Please switch to Base network in your wallet before minting."
+              );
+            }
+            updateProgress("Successfully switched to Base network");
+          }
+        } catch (networkError) {
+          console.error("Network check error:", networkError);
+          updateProgress(`Network error: ${networkError.message}`);
+          throw networkError;
+        }
+
+        // Start the minting process with progress updates
+        updateProgress("Uploading image to IPFS...");
+
         // Mint the signature
         const result = await mintSignature({
           name,
@@ -391,9 +692,11 @@ export class SignatureModal extends ModalBase {
           imageDataUrl: optimizedImageDataUrl,
           payoutRecipient,
           description,
+          onProgress: updateProgress,
         });
 
         // Format the result for display
+        updateProgress("Formatting results...");
         const { formatMintResult } = await import("../services/blockchain.js");
         const { getIpfsGatewayUrl } = await import("../services/ipfs.js");
         const formattedResult = formatMintResult(result);
@@ -437,7 +740,11 @@ export class SignatureModal extends ModalBase {
         // Hide the form buttons
         formButtons.style.display = "none";
       } catch (err) {
-        resultDiv.textContent = "Mint failed: " + (err.message || err);
+        console.error("Minting error:", err);
+        resultDiv.innerHTML = `
+          <div style='color:#D32F2F;font-weight:bold;margin-bottom:10px;'>Mint failed</div>
+          <div style='margin-bottom:10px;'>${err.message || err}</div>
+        `;
         resultDiv.style.color = "#D32F2F";
         mintFormBtn.disabled = false;
         mintCancelBtn.disabled = false;
