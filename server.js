@@ -9,7 +9,27 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import multer from "multer";
 import { Readable } from "stream";
-import { FormData, File, Blob } from "formdata-node";
+
+// Try to import formdata-node, but provide fallbacks if it's not available
+let FormData, File, Blob;
+try {
+  const formdataModule = await import("formdata-node");
+  FormData = formdataModule.FormData;
+  File = formdataModule.File;
+  Blob = formdataModule.Blob;
+} catch (error) {
+  console.warn(
+    "formdata-node not available, using global FormData, File, and Blob"
+  );
+  // Use global FormData, File, and Blob if available
+  FormData =
+    global.FormData ||
+    class FormData {
+      append() {}
+    };
+  File = global.File || class File {};
+  Blob = global.Blob || class Blob {};
+}
 
 // Load environment variables
 dotenv.config();
@@ -333,23 +353,22 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
-// For local development, start the server
-if (process.env.NODE_ENV !== "production") {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`API endpoints:`);
-    console.log(`- GET /api/health - Health check endpoint`);
-    console.log(`- GET /api/ipfs/:hash - Fetch IPFS content`);
-    console.log(`- POST /api/pin-file - Pin a file to IPFS`);
-    console.log(`- POST /api/pin-json - Pin JSON to IPFS`);
-    console.log(`- POST /api/validate-metadata - Validate metadata JSON`);
-    console.log(
-      `\nPinata JWT status: ${
-        process.env.PINATA_JWT ? "Configured ✅" : "Missing ❌"
-      }`
-    );
-  });
-}
+// Start the server (for both local development and production)
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`API endpoints:`);
+  console.log(`- GET /api/health - Health check endpoint`);
+  console.log(`- GET /api/ipfs/:hash - Fetch IPFS content`);
+  console.log(`- POST /api/pin-file - Pin a file to IPFS`);
+  console.log(`- POST /api/pin-json - Pin JSON to IPFS`);
+  console.log(`- POST /api/validate-metadata - Validate metadata JSON`);
+  console.log(
+    `\nPinata JWT status: ${
+      process.env.PINATA_JWT ? "Configured ✅" : "Missing ❌"
+    }`
+  );
+  console.log(`\nEnvironment: ${process.env.NODE_ENV || "development"}`);
+});
 
-// For Vercel serverless deployment
+// For Vercel serverless deployment (not used in Northflank)
 export default app;
