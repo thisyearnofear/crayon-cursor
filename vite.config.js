@@ -30,9 +30,7 @@ export default defineConfig(({ mode }) => {
     define: {
       // Define environment variables for client-side code
       "process.env.VITE_API_URL": JSON.stringify(
-        process.env.VERCEL_URL
-          ? `https://${process.env.VERCEL_URL}`
-          : "http://localhost:3000"
+        process.env.VITE_API_URL || "http://localhost:3000"
       ),
     },
   };

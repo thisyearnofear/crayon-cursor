@@ -33,7 +33,12 @@ app.use(
   cors({
     origin:
       process.env.NODE_ENV === "production"
-        ? ["https://signature-opal.vercel.app", /\.vercel\.app$/, /\.zora\.co$/]
+        ? [
+            "https://signature-opal.vercel.app",
+            /\.vercel\.app$/,
+            /\.zora\.co$/,
+            process.env.FRONTEND_URL, // Allow the frontend URL from environment variable
+          ].filter(Boolean) // Remove undefined values
         : ["http://localhost:8899", "http://localhost:3000"],
     credentials: true,
   })

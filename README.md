@@ -202,11 +202,14 @@ Reliable blockchain connectivity with:
 3. Error handling for network issues
 4. Performance optimization for mobile devices
 
-## Deployment to Vercel
+## Deployment
 
-This project is configured for deployment on Vercel with both frontend and backend components.
+This project is designed for a split deployment architecture:
 
-### Setup Instructions
+- Frontend deployed on Vercel
+- Backend deployed on Northflank
+
+### Frontend Deployment to Vercel
 
 1. **Fork or clone the repository to your GitHub account**
 
@@ -217,20 +220,41 @@ This project is configured for deployment on Vercel with both frontend and backe
 
 3. **Configure environment variables**
 
-   - Add the `PINATA_JWT` as an environment variable in Vercel
-   - You can use Vercel's UI to add this as a secret
+   - Add `VITE_API_URL` pointing to your Northflank backend URL
 
 4. **Deploy**
-   - Vercel will build and deploy both the frontend and backend
-   - The backend API will be available at `/api/*` endpoints
+   - Vercel will build and deploy the frontend
+   - The frontend will be available at your Vercel URL
 
-### Vercel Configuration
+### Backend Deployment to Northflank
 
-The project includes a `vercel.json` file that configures:
+1. **Create a Northflank account**
 
-- The build process for both frontend and backend
-- Routing for API endpoints and static assets
-- Environment variable handling
+   - Sign up at [Northflank](https://northflank.com)
+   - Create a new project
+
+2. **Create a combined service**
+
+   - Select your GitHub repository
+   - Choose the main branch
+   - Select Dockerfile as the build option
+   - Ensure port 3000 is exposed
+
+3. **Configure environment variables**
+
+   - Add `PINATA_JWT` with your Pinata JWT token
+   - Add `NODE_ENV=production`
+   - Add `FRONTEND_URL` pointing to your Vercel frontend URL
+
+4. **Deploy**
+   - Northflank will build and deploy your backend
+   - The backend API will be available at your Northflank URL
+
+### Configuration Files
+
+- **Dockerfile**: Configures the Node.js environment for Northflank
+- **vercel.json**: Configures the frontend deployment on Vercel
+- **.env.example**: Shows all required environment variables
 
 ## Troubleshooting
 
@@ -265,11 +289,29 @@ We're currently experiencing an issue with the Zora Coins contract deployment th
 - All metadata validation passes successfully
 - The wallet is properly connected to the Base network
 
+**Error Message:**
+
+```
+ContractFunctionExecutionError: The contract function "deploy" reverted with the following signature:
+0x4ab38e08
+
+Unable to decode signature "0x4ab38e08" as it was not found on the provided ABI.
+Make sure you are using the correct ABI and that the error exists on it.
+You can look up the decoded signature here: https://openchain.xyz/signatures?query=0x4ab38e08.
+
+Contract Call:
+  address:   0x777777751622c0d3258f214F9DF38E35BF45baF3
+  function:  deploy(address payoutRecipient, address[] owners, string uri, string name, string symbol, address platformReferrer, address currency, int24 tickLower, uint256 orderSize)
+  args:      (0x55A5705453Ee82c742274154136Fce8149597058, ["0x55A5705453Ee82c742274154136Fce8149597058"], ipfs://QmVk21LHoHKd6XhY9rjxW9opvq7M1Ft4rQN8U5YphT5r2X, Signature Papa, SIG, 0x55A5705453Ee82c742274154136Fce8149597058, 0x4200000000000000000000000000000000000006, -199200, 0)
+  sender:    0x55A5705453Ee82c742274154136Fce8149597058
+```
+
 **Possible causes:**
 
 - The contract may have specific requirements not documented in the SDK
 - There might be an issue with the contract parameters we're providing
 - The contract might have been updated since the SDK version we're using
+- The error code 0x4ab38e08 might indicate a specific validation failure in the contract
 
 **Workarounds attempted:**
 
@@ -277,6 +319,11 @@ We're currently experiencing an issue with the Zora Coins contract deployment th
 - Added additional validation for all parameters
 - Ensured proper network connection to Base
 - Verified metadata follows the EIP-7572 standard
+- Tried different parameter combinations
+
+**SDK Version:**
+
+- @zoralabs/coins-sdk: 0.0.8
 
 If you're from the Zora team and can help diagnose this issue, please check the contract interaction in `src/js/coins/zora-coins.js` and the error handling in the same file.
 
