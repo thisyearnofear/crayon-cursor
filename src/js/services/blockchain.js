@@ -23,6 +23,7 @@ export async function mintSignature({
   imageDataUrl,
   payoutRecipient,
   description,
+  initialPurchaseWei = 0n, // Accept initialPurchaseWei as an option, default to 0n
   onProgress = () => {},
 }) {
   try {
@@ -125,14 +126,47 @@ export async function mintSignature({
     onProgress("Creating signature coin on Base network...");
     onProgress("Please approve the transaction in your wallet...");
 
+    // Import network utilities to check connection
+    const { isConnectedToBase, switchToBase } = await import(
+      "../utils/network.js"
+    );
+
+    // Check if connected to Base network
+    const isBase = await isConnectedToBase();
+    if (!isBase) {
+      onProgress("Switching to Base network...");
+      const switched = await switchToBase();
+      if (!switched) {
+        throw new Error(
+          "Failed to switch to Base network. Please switch manually in your wallet."
+        );
+      }
+      onProgress("Successfully switched to Base network");
+    }
+
+    // Append timestamp suffix to symbol to ensure uniqueness and avoid collisions
+    const timestampSuffix = Date.now().toString(36).slice(-2);
+    const uniqueSymbol = `${symbol.toUpperCase()}${timestampSuffix}`;
+
+    onProgress(`Creating coin with name: ${name}, symbol: ${uniqueSymbol}...`);
+
+    // Determine currency and orderSize for factory contract
+    const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+    const WETH_ADDRESS = "0x4200000000000000000000000000000000000006";
+    const currency = initialPurchaseWei > 0n ? WETH_ADDRESS : ZERO_ADDRESS;
+    const orderSize = initialPurchaseWei;
+
     const result = await createSignatureCoin({
       name,
-      symbol: symbol.toUpperCase(),
+      symbol: uniqueSymbol,
       metadataUri,
       payoutRecipient,
       account: payoutRecipient,
       // Don't specify an RPC URL - let the wallet handle it
       platformReferrer: "0x55A5705453Ee82c742274154136Fce8149597058",
+      initialPurchaseWei,
+      currency,
+      orderSize,
     });
 
     onProgress("Transaction submitted! Waiting for confirmation...");
