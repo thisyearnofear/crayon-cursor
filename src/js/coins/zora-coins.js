@@ -9,7 +9,8 @@ import { base } from "viem/chains";
 
 // Gate logs and env variables
 const DEV = import.meta.env.DEV;
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_URL = import.meta.env.VITE_API_URL;
+if (!API_URL) throw new Error("VITE_API_URL is not set in the build environment!");
 function log(...args) {
   if (DEV) console.log(...args);
 }

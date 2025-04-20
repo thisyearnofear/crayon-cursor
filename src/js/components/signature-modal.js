@@ -602,8 +602,8 @@ export class SignatureModal extends ModalBase {
         } catch (proxyError) {
           console.error("Proxy server check failed:", proxyError);
           // Use environment variable for API URL in the error message
-          const apiBaseUrl =
-            import.meta.env.VITE_API_URL || "http://localhost:3000";
+          const apiBaseUrl = import.meta.env.VITE_API_URL;
+          if (!apiBaseUrl) throw new Error("VITE_API_URL is not set in the build environment!");
           throw new Error(
             `Cannot connect to proxy server. Please make sure it's running at ${apiBaseUrl}`
           );

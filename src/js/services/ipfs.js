@@ -14,7 +14,8 @@ export async function pinFileWithPinata(file) {
     // Use our proxy server instead of calling Pinata directly
     // This keeps our Pinata JWT secure on the server
     // Use environment variable for API URL if available, otherwise fallback to localhost
-    const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    const apiBaseUrl = import.meta.env.VITE_API_URL;
+if (!apiBaseUrl) throw new Error("VITE_API_URL is not set in the build environment!");
     console.log(`Using API URL: ${apiBaseUrl}`);
     const apiUrl = `${apiBaseUrl}/api/pin-file`;
 
@@ -58,7 +59,8 @@ export async function pinJsonWithPinata(json) {
     // Use our proxy server instead of calling Pinata directly
     // This keeps our Pinata JWT secure on the server
     // Use environment variable for API URL if available, otherwise fallback to localhost
-    const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    const apiBaseUrl = import.meta.env.VITE_API_URL;
+if (!apiBaseUrl) throw new Error("VITE_API_URL is not set in the build environment!");
     console.log(`Using API URL for JSON pinning: ${apiBaseUrl}`);
     const apiUrl = `${apiBaseUrl}/api/pin-json`;
 
@@ -131,7 +133,8 @@ export function getIpfsGatewayUrl(ipfsUri) {
  */
 export async function checkApiHealth() {
   try {
-    const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    const apiBaseUrl = import.meta.env.VITE_API_URL;
+if (!apiBaseUrl) throw new Error("VITE_API_URL is not set in the build environment!");
     console.log(`Checking API health at: ${apiBaseUrl}`);
 
     const response = await fetch(`${apiBaseUrl}/api/health`, {
