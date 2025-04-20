@@ -24,6 +24,7 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         input: {
           index: resolve(__dirname, "src/index.html"),
+          signatures: resolve(__dirname, "src/signatures.html"),
         },
       },
     },
