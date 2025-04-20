@@ -157,14 +157,7 @@ export async function mintSignature({
       onProgress("Successfully switched to Base network");
     }
 
-    // Generate a completely unique name and symbol to avoid collisions
-    const timestamp = Date.now().toString(36).slice(-6);
-    const uniqueName = `Signature ${timestamp}`;
-    const uniqueSymbol = `SG${timestamp.toUpperCase()}`;
-
-    onProgress(
-      `Creating coin with unique name: ${uniqueName}, symbol: ${uniqueSymbol}...`
-    );
+    onProgress(`Creating coin with name: ${name}...`);
 
     // Determine currency and orderSize for factory contract
     const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
@@ -173,8 +166,8 @@ export async function mintSignature({
     const orderSize = initialPurchaseWei;
 
     const result = await createSignatureCoin({
-      name: uniqueName, // Use the unique name instead of the original name
-      symbol: uniqueSymbol,
+      name,
+      symbol,
       metadataUri,
       payoutRecipient,
       account: payoutRecipient,
@@ -203,8 +196,7 @@ export async function mintSignature({
         ...result,
         metadataUri,
         ipfsImageUri,
-        name: uniqueName, // Include the unique name that was used
-        symbol: uniqueSymbol, // Include the unique symbol that was used
+        name,
       };
     } catch (confirmError) {
       console.error("Error confirming transaction:", confirmError);

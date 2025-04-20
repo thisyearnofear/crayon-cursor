@@ -28,11 +28,6 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
-    define: {
-      // Always inject the build-time VITE_API_URL (fallback to localhost for dev)
-      "import.meta.env.VITE_API_URL": JSON.stringify(
-        process.env.VITE_API_URL || "http://localhost:3000"
-      ),
-    },
+
   };
 });
