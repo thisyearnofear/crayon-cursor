@@ -104,6 +104,28 @@ app.post("/api/pin-file", upload.single("file"), async (req, res) => {
       return res.status(400).json({ error: "No file provided" });
     }
 
+    // Log JWT details for debugging
+    const jwt = process.env.PINATA_JWT;
+    console.log("Using Pinata JWT:");
+    console.log(`- Length: ${jwt ? jwt.length : "N/A"} characters`);
+    console.log(`- Segments: ${jwt ? jwt.split(".").length : "N/A"}`);
+    console.log(
+      `- First 10 chars: ${jwt ? jwt.substring(0, 10) + "..." : "N/A"}`
+    );
+
+    // Check for common JWT issues
+    if (jwt) {
+      if (jwt.trim() !== jwt) {
+        console.warn("Warning: JWT has leading/trailing whitespace");
+      }
+      if (jwt.includes("\n") || jwt.includes("\r")) {
+        console.warn("Warning: JWT contains newline characters");
+      }
+      if (jwt.includes('"') || jwt.includes("'")) {
+        console.warn("Warning: JWT contains quote characters");
+      }
+    }
+
     // Create a Blob from the buffer
     const blob = new Blob([req.file.buffer], { type: req.file.mimetype });
 
@@ -116,12 +138,16 @@ app.post("/api/pin-file", upload.single("file"), async (req, res) => {
     const formData = new FormData();
     formData.append("file", file);
 
+    // Use a clean version of the JWT (trim whitespace)
+    const cleanJWT = jwt ? jwt.trim() : "";
+    console.log("Making request to Pinata API...");
+
     const response = await fetch(
       "https://api.pinata.cloud/pinning/pinFileToIPFS",
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${process.env.PINATA_JWT}`,
+          Authorization: `Bearer ${cleanJWT}`,
         },
         body: formData,
       }
@@ -152,18 +178,28 @@ app.post("/api/pin-json", async (req, res) => {
       return res.status(400).json({ error: "No JSON provided" });
     }
 
+    // Log JWT details for debugging
+    const jwt = process.env.PINATA_JWT;
+    console.log("Using Pinata JWT for JSON pinning:");
+    console.log(`- Length: ${jwt ? jwt.length : "N/A"} characters`);
+    console.log(`- Segments: ${jwt ? jwt.split(".").length : "N/A"}`);
+
+    // Use a clean version of the JWT (trim whitespace)
+    const cleanJWT = jwt ? jwt.trim() : "";
+
     const data = {
       pinataContent: req.body,
       pinataMetadata: { name: "metadata.json" },
     };
 
+    console.log("Making JSON pin request to Pinata API...");
     const response = await fetch(
       "https://api.pinata.cloud/pinning/pinJSONToIPFS",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.PINATA_JWT}`,
+          Authorization: `Bearer ${cleanJWT}`,
         },
         body: JSON.stringify(data),
       }

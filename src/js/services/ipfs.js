@@ -14,7 +14,8 @@ export async function pinFileWithPinata(file) {
     // Use our proxy server instead of calling Pinata directly
     // This keeps our Pinata JWT secure on the server
     // Use environment variable for API URL if available, otherwise fallback to localhost
-    const apiBaseUrl = process.env.VITE_API_URL || "http://localhost:3000";
+    const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    console.log(`Using API URL: ${apiBaseUrl}`);
     const apiUrl = `${apiBaseUrl}/api/pin-file`;
 
     const res = await fetch(apiUrl, {
@@ -23,8 +24,20 @@ export async function pinFileWithPinata(file) {
     });
 
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.error || `Proxy server error (${res.status})`);
+      let errorMessage;
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.error || `Proxy server error (${res.status})`;
+        console.error("Detailed error from proxy server:", errorData);
+      } catch (parseError) {
+        // If the response is not JSON, get the text
+        const errorText = await res.text();
+        errorMessage = `Proxy server error (${
+          res.status
+        }): ${errorText.substring(0, 100)}`;
+        console.error("Raw error from proxy server:", errorText);
+      }
+      throw new Error(errorMessage);
     }
 
     const result = await res.json();
@@ -45,7 +58,8 @@ export async function pinJsonWithPinata(json) {
     // Use our proxy server instead of calling Pinata directly
     // This keeps our Pinata JWT secure on the server
     // Use environment variable for API URL if available, otherwise fallback to localhost
-    const apiBaseUrl = process.env.VITE_API_URL || "http://localhost:3000";
+    const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    console.log(`Using API URL for JSON pinning: ${apiBaseUrl}`);
     const apiUrl = `${apiBaseUrl}/api/pin-json`;
 
     const res = await fetch(apiUrl, {
@@ -57,8 +71,23 @@ export async function pinJsonWithPinata(json) {
     });
 
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.error || `Proxy server error (${res.status})`);
+      let errorMessage;
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.error || `Proxy server error (${res.status})`;
+        console.error(
+          "Detailed error from proxy server (JSON pinning):",
+          errorData
+        );
+      } catch (parseError) {
+        // If the response is not JSON, get the text
+        const errorText = await res.text();
+        errorMessage = `Proxy server error (${
+          res.status
+        }): ${errorText.substring(0, 100)}`;
+        console.error("Raw error from proxy server (JSON pinning):", errorText);
+      }
+      throw new Error(errorMessage);
     }
 
     const result = await res.json();
@@ -94,4 +123,34 @@ export function getIpfsGatewayUrl(ipfsUri) {
   }
 
   return ipfsUri;
+}
+
+/**
+ * Checks if the backend API is accessible
+ * @returns {Promise<boolean>} True if the API is accessible, false otherwise
+ */
+export async function checkApiHealth() {
+  try {
+    const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    console.log(`Checking API health at: ${apiBaseUrl}`);
+
+    const response = await fetch(`${apiBaseUrl}/api/health`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      console.error(`API health check failed: ${response.status}`);
+      return false;
+    }
+
+    const data = await response.json();
+    console.log("API health check response:", data);
+    return true;
+  } catch (error) {
+    console.error("API health check error:", error);
+    return false;
+  }
 }

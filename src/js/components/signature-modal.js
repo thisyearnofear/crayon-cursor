@@ -585,7 +585,7 @@ export class SignatureModal extends ModalBase {
         try {
           // Use environment variable for API URL if available, otherwise fallback to localhost
           const apiBaseUrl =
-            process.env.VITE_API_URL || "http://localhost:3000";
+            import.meta.env.VITE_API_URL || "http://localhost:3000";
           console.log("Using API URL:", apiBaseUrl);
 
           const proxyCheck = await fetch(`${apiBaseUrl}/api/health`, {
@@ -601,7 +601,7 @@ export class SignatureModal extends ModalBase {
           console.error("Proxy server check failed:", proxyError);
           // Use environment variable for API URL in the error message
           const apiBaseUrl =
-            process.env.VITE_API_URL || "http://localhost:3000";
+            import.meta.env.VITE_API_URL || "http://localhost:3000";
           throw new Error(
             `Cannot connect to proxy server. Please make sure it's running at ${apiBaseUrl}`
           );
@@ -713,6 +713,12 @@ export class SignatureModal extends ModalBase {
         // Show success message with links
         resultDiv.innerHTML = `
           <div style='color:#22a722;font-weight:bold;margin-bottom:10px;'>Minted Successfully!</div>
+          <div style='margin-bottom:5px;'><b>Coin Name:</b> ${
+            formattedResult.coinName || uniqueName
+          }</div>
+          <div style='margin-bottom:5px;'><b>Coin Symbol:</b> ${
+            formattedResult.coinSymbol || uniqueSymbol
+          }</div>
           <div style='margin-bottom:5px;'><b>Coin Address:</b> <a href='${
             formattedResult.explorerLinks.address
           }' target='_blank'>${formattedResult.address.slice(

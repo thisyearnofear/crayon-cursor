@@ -4,7 +4,11 @@
 import { createSignatureCoin, validateMetadata } from "../coins/zora-coins.js";
 import { dataUrlToBlob } from "../utils/image.js";
 import { buildSignatureMetadata } from "../utils/metadata.js";
-import { pinFileWithPinata, pinJsonWithPinata } from "./ipfs.js";
+import {
+  pinFileWithPinata,
+  pinJsonWithPinata,
+  checkApiHealth,
+} from "./ipfs.js";
 
 /**
  * Mints a signature as an NFT
@@ -27,6 +31,13 @@ export async function mintSignature({
   onProgress = () => {},
 }) {
   try {
+    // Check if the API is accessible before proceeding
+    onProgress("Checking API health...");
+    const isApiHealthy = await checkApiHealth();
+    if (!isApiHealthy) {
+      throw new Error("Backend API is not accessible. Please try again later.");
+    }
+    onProgress("API health check successful");
     // Step 1: Convert data URL to blob and pin to IPFS
     onProgress("Converting image and uploading to IPFS...");
     const signatureBlob = dataUrlToBlob(imageDataUrl);
@@ -46,7 +57,8 @@ export async function mintSignature({
     onProgress("Validating metadata...");
     try {
       // Use environment variable for API URL if available, otherwise fallback to localhost
-      const apiBaseUrl = process.env.VITE_API_URL || "http://localhost:3000";
+      const apiBaseUrl =
+        import.meta.env.VITE_API_URL || "http://localhost:3000";
       const validateResponse = await fetch(
         `${apiBaseUrl}/api/validate-metadata`,
         {
@@ -93,7 +105,8 @@ export async function mintSignature({
       onProgress("Verifying metadata content...");
       const ipfsHash = metadataUri.replace("ipfs://", "");
       // Use environment variable for API URL if available, otherwise fallback to localhost
-      const apiBaseUrl = process.env.VITE_API_URL || "http://localhost:3000";
+      const apiBaseUrl =
+        import.meta.env.VITE_API_URL || "http://localhost:3000";
       const proxyUrl = `${apiBaseUrl}/api/ipfs/${ipfsHash}`;
 
       const metadataResponse = await fetch(proxyUrl);
@@ -144,11 +157,14 @@ export async function mintSignature({
       onProgress("Successfully switched to Base network");
     }
 
-    // Append timestamp suffix to symbol to ensure uniqueness and avoid collisions
-    const timestampSuffix = Date.now().toString(36).slice(-2);
-    const uniqueSymbol = `${symbol.toUpperCase()}${timestampSuffix}`;
+    // Generate a completely unique name and symbol to avoid collisions
+    const timestamp = Date.now().toString(36).slice(-6);
+    const uniqueName = `Signature ${timestamp}`;
+    const uniqueSymbol = `SG${timestamp.toUpperCase()}`;
 
-    onProgress(`Creating coin with name: ${name}, symbol: ${uniqueSymbol}...`);
+    onProgress(
+      `Creating coin with unique name: ${uniqueName}, symbol: ${uniqueSymbol}...`
+    );
 
     // Determine currency and orderSize for factory contract
     const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
@@ -157,7 +173,7 @@ export async function mintSignature({
     const orderSize = initialPurchaseWei;
 
     const result = await createSignatureCoin({
-      name,
+      name: uniqueName, // Use the unique name instead of the original name
       symbol: uniqueSymbol,
       metadataUri,
       payoutRecipient,
@@ -187,6 +203,8 @@ export async function mintSignature({
         ...result,
         metadataUri,
         ipfsImageUri,
+        name: uniqueName, // Include the unique name that was used
+        symbol: uniqueSymbol, // Include the unique symbol that was used
       };
     } catch (confirmError) {
       console.error("Error confirming transaction:", confirmError);
@@ -212,6 +230,8 @@ export function formatMintResult(result) {
     txHash: result.hash,
     metadataUri: result.metadataUri,
     ipfsImageUri: result.ipfsImageUri,
+    coinName: result.name || "Unknown",
+    coinSymbol: result.symbol || "Unknown",
     explorerLinks: {
       address: `https://basescan.org/address/${result.address}`,
       transaction: `https://basescan.org/tx/${result.hash}`,

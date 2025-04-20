@@ -10,6 +10,7 @@
 export function validateMetadata(metadata) {
   console.log("Validating metadata:", metadata);
 
+  // Required fields according to EIP-7572 standard
   if (!metadata.name || typeof metadata.name !== "string") {
     throw new Error("Metadata must include a name as a string");
   }
@@ -27,17 +28,18 @@ export function validateMetadata(metadata) {
     throw new Error("Image URL must start with ipfs:// for Zora Coins");
   }
 
-  // Check properties object
-  if (!metadata.properties || typeof metadata.properties !== "object") {
-    throw new Error("Metadata must include a properties object");
+  // Optional properties object
+  if (metadata.properties && typeof metadata.properties !== "object") {
+    throw new Error("If properties is included, it must be an object");
   }
 
-  // Check category property
+  // If properties.category exists, it must be a string
   if (
-    !metadata.properties.category ||
+    metadata.properties &&
+    metadata.properties.category &&
     typeof metadata.properties.category !== "string"
   ) {
-    throw new Error("Metadata properties must include a category as a string");
+    throw new Error("If category is included, it must be a string");
   }
 
   console.log("Metadata validation passed");
@@ -58,13 +60,14 @@ export function buildSignatureMetadata({ name, imageUrl, description }) {
     throw new Error("Image URL must start with ipfs:// for Zora Coins");
   }
 
+  // Create metadata following the exact format specified by Zora
+  // This follows the EIP-7572 standard which is based on EIP721 and EIP1155
   const metadata = {
     name: name || "Signature Opal",
     description: description || "A unique signature minted as an NFT.",
     image: imageUrl,
     properties: {
       category: "signature",
-      type: "image",
     },
   };
 

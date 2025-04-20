@@ -9,10 +9,13 @@ import { base } from "viem/chains";
 
 // Gate logs and env variables
 const DEV = import.meta.env.DEV;
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 function log(...args) {
   if (DEV) console.log(...args);
 }
+
+// Log API URL for debugging
+log("Using API URL:", API_URL);
 
 /**
  * Create a new signature coin on ZORA.
@@ -127,10 +130,14 @@ export async function createSignatureCoin({
   // Derive orderSize and currency: only use WETH when orderSize > 0
   const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
   const WETH_ADDRESS = "0x4200000000000000000000000000000000000006";
-  const _orderSize = typeof orderSize !== 'undefined' ? orderSize : initialPurchaseWei;
-  const _currency = _orderSize > 0n
-    ? (typeof currency === 'string' && currency ? currency : WETH_ADDRESS)
-    : ZERO_ADDRESS;
+  const _orderSize =
+    typeof orderSize !== "undefined" ? orderSize : initialPurchaseWei;
+  const _currency =
+    _orderSize > 0n
+      ? typeof currency === "string" && currency
+        ? currency
+        : WETH_ADDRESS
+      : ZERO_ADDRESS;
 
   // Prepare coin params according to the documentation
   const coinParams = {
@@ -139,7 +146,7 @@ export async function createSignatureCoin({
     uri: metadataUri,
     payoutRecipient,
     owners: [payoutRecipient],
-    tickLower: 0n,
+    tickLower: -208200n, // Updated to Zora's recommended value
     currency: _currency,
     orderSize: _orderSize,
     ...(platformReferrer ? { platformReferrer } : {}),
@@ -186,11 +193,16 @@ export async function createSignatureCoin({
       const FACTORY_ADDRESS = "0x777777751622c0d3258f214F9DF38E35BF45baF3";
       log(`Approving ERC20 token ${_currency} to factory ${FACTORY_ADDRESS}`);
       const erc20ApproveAbi = [
-        { name: "approve", type: "function", stateMutability: "nonpayable", inputs: [
+        {
+          name: "approve",
+          type: "function",
+          stateMutability: "nonpayable",
+          inputs: [
             { name: "spender", type: "address" },
-            { name: "amount", type: "uint256" }
-          ], outputs: [{ name: "", type: "bool" }]
-        }
+            { name: "amount", type: "uint256" },
+          ],
+          outputs: [{ name: "", type: "bool" }],
+        },
       ];
       const approvalTxHash = await walletClient.writeContract({
         address: _currency,
@@ -217,13 +229,26 @@ export async function createSignatureCoin({
         ipfsFetch: async (uri) => {
           const hash = uri.replace("ipfs://", "");
           const res = await fetch(`${API_URL}/api/ipfs/${hash}`);
-          if (!res.ok) throw new Error(`Failed to fetch IPFS content: ${res.status}`);
-          return await res.json();
+          if (!res.ok)
+            throw new Error(`Failed to fetch IPFS content: ${res.status}`);
+
+          // Parse the response
+          const result = await res.json();
+
+          // Check if the response is wrapped in a content object
+          if (result && result.content) {
+            log("Extracted metadata from wrapper:", result.content);
+            return result.content;
+          }
+
+          // If not wrapped, return the result directly
+          return result;
         },
         // Only send ETH when using native currency and non-zero orderSize
-        overrides: (_currency === ZERO_ADDRESS && _orderSize > 0n)
-          ? { value: _orderSize }
-          : {},
+        overrides:
+          _currency === ZERO_ADDRESS && _orderSize > 0n
+            ? { value: _orderSize }
+            : {},
       });
 
       return result;

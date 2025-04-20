@@ -64,12 +64,23 @@ cd signature-opal
 npm install
 ```
 
-3. Set up environment variables (create a `.env` file):
+3. Set up environment variables:
+
+**For local development, create a `.env` file in the project root:**
 
 ```
 # Pinata API JWT for IPFS storage (server-side only)
 PINATA_JWT=your_pinata_jwt_here
 
+# Optional: Custom API URL (defaults to http://localhost:3000)
+# VITE_API_URL=http://localhost:3000
+```
+
+**For the frontend (Vite), create a `.env.local` file:**
+
+```
+# API URL for the backend server
+VITE_API_URL=http://localhost:3000
 ```
 
 ### Development
@@ -277,58 +288,40 @@ Common issues and solutions:
 3. **Minting Errors**
    - Check your wallet has enough ETH for gas fees
    - Verify you're connected to the correct network (Base)
-   - If you see error code `0x4ab38e08`, this is a contract deployment error (see Known Issues section)
+   - Make sure your backend server is running and accessible
+   - Check that your Pinata JWT token is valid and has the necessary permissions
+   - If you see API errors, verify that your VITE_API_URL environment variable is set correctly
 
-## Known Issues
+## Recent Updates
 
-### Contract Deployment Error (0x4ab38e08)
+### Zora Coins Integration
 
-We're currently experiencing an issue with the Zora Coins contract deployment that returns error code `0x4ab38e08`. This appears to be related to the contract interaction rather than our implementation.
+We've successfully integrated the Zora Coins SDK for minting signatures as NFTs on the Base network. Key improvements include:
 
-**Details:**
+- **Unique Name/Symbol Generation**: Each signature is minted with a unique name and symbol to avoid collisions
+- **Metadata Validation**: Strict validation following the EIP-7572 standard
+- **Error Handling**: Comprehensive error handling for all blockchain interactions
+- **Backend Proxy**: Secure proxy server for IPFS uploads and metadata validation
 
-- Error occurs during the `createCoin` function call in the Zora Coins SDK
-- The error persists regardless of the name or symbol used
-- All metadata validation passes successfully
-- The wallet is properly connected to the Base network
+### Environment Variable Configuration
 
-**Error Message:**
+The application now properly uses Vite's environment variable system (`import.meta.env`) for configuration. Key environment variables:
 
-```
-ContractFunctionExecutionError: The contract function "deploy" reverted with the following signature:
-0x4ab38e08
+- `VITE_API_URL`: URL of the backend API server
+- `PINATA_JWT`: Pinata JWT token for IPFS uploads (server-side only)
 
-Unable to decode signature "0x4ab38e08" as it was not found on the provided ABI.
-Make sure you are using the correct ABI and that the error exists on it.
-You can look up the decoded signature here: https://openchain.xyz/signatures?query=0x4ab38e08.
+### Minting Process
 
-Contract Call:
-  address:   0x777777751622c0d3258f214F9DF38E35BF45baF3
-  function:  deploy(address payoutRecipient, address[] owners, string uri, string name, string symbol, address platformReferrer, address currency, int24 tickLower, uint256 orderSize)
-  args:      (0x55A5705453Ee82c742274154136Fce8149597058, ["0x55A5705453Ee82c742274154136Fce8149597058"], ipfs://QmVk21LHoHKd6XhY9rjxW9opvq7M1Ft4rQN8U5YphT5r2X, Signature Papa, SIG, 0x55A5705453Ee82c742274154136Fce8149597058, 0x4200000000000000000000000000000000000006, -199200, 0)
-  sender:    0x55A5705453Ee82c742274154136Fce8149597058
-```
+The minting process has been streamlined and now includes:
 
-**Possible causes:**
-
-- The contract may have specific requirements not documented in the SDK
-- There might be an issue with the contract parameters we're providing
-- The contract might have been updated since the SDK version we're using
-- The error code 0x4ab38e08 might indicate a specific validation failure in the contract
-
-**Workarounds attempted:**
-
-- Generated unique symbols to avoid collisions
-- Added additional validation for all parameters
-- Ensured proper network connection to Base
-- Verified metadata follows the EIP-7572 standard
-- Tried different parameter combinations
+1. API health check before attempting to mint
+2. Proper metadata validation and formatting
+3. Unique name and symbol generation
+4. Improved error handling and user feedback
 
 **SDK Version:**
 
 - @zoralabs/coins-sdk: 0.0.8
-
-If you're from the Zora team and can help diagnose this issue, please check the contract interaction in `src/js/coins/zora-coins.js` and the error handling in the same file.
 
 ## Contributing
 
