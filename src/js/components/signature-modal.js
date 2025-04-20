@@ -122,7 +122,9 @@ export class SignatureModal extends ModalBase {
         ? this.canvas.toDataURL("image/png")
         : this.previewImage.src;
 
-      this.showMintForm(imageDataUrl);
+      this.showMintForm(imageDataUrl, {
+        suggestAlternative: true
+      });
     };
   }
 
@@ -258,7 +260,7 @@ export class SignatureModal extends ModalBase {
     this.show();
   }
 
-  showMintForm(imageDataUrl) {
+  showMintForm(imageDataUrl, options = {}) {
     // Hide buttons
     this.buttons.style.display = "none";
 
@@ -752,6 +754,25 @@ export class SignatureModal extends ModalBase {
 
         resultDiv.appendChild(doneBtn);
 
+        // Record mint in Supabase
+        (async () => {
+          try {
+            const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+            const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+            const supabase = createClient(supabaseUrl, supabaseKey);
+            const recordName = formattedResult.coinName;
+            const recordSymbol = formattedResult.coinSymbol;
+            const ownerAddr = payoutRecipient;
+            const mintType = this.isMobile ? 'signet' : 'insignia';
+            await supabase
+              .from('coins')
+              .upsert({ name: recordName, symbol: recordSymbol, owner: ownerAddr, minted: 1, mintType }, { onConflict: ['symbol'] });
+          } catch (e) {
+            console.error('Failed to record mint in Supabase:', e);
+          }
+        })();
+
         // Hide the form buttons
         formButtons.style.display = "none";
       } catch (err) {
@@ -760,6 +781,29 @@ export class SignatureModal extends ModalBase {
           <div style='color:#D32F2F;font-weight:bold;margin-bottom:10px;'>Mint failed</div>
           <div style='margin-bottom:10px;'>${err.message || err}</div>
         `;
+        // If error is due to duplicate name/symbol, suggest an alternative
+        if (err.message && /(name|symbol).*taken|duplicate|already exists/i.test(err.message)) {
+          // Suggest an alternative: append a random 2-digit number
+          const nameVal = nameInput.querySelector("input").value;
+          const symbolVal = symbolInput.querySelector("input").value;
+          const suggestedName = nameVal + Math.floor(10 + Math.random() * 90);
+          const suggestedSymbol = symbolVal.length < 4 ? symbolVal + Math.floor(Math.random() * 10) : symbolVal.slice(0,3) + Math.floor(Math.random() * 10);
+          resultDiv.innerHTML += `
+            <div style='margin-top:10px;'>
+              <b>Suggestion:</b> Try <span style='background:#f5f5f5;padding:2px 6px;border-radius:4px;'>${suggestedName}</span> / <span style='background:#f5f5f5;padding:2px 6px;border-radius:4px;'>${suggestedSymbol}</span> <button id='use-suggestion-btn' style='margin-left:8px;background:#FC0E49;color:#fff;padding:4px 10px;border:none;border-radius:4px;cursor:pointer;'>Use</button>
+            </div>
+          `;
+          setTimeout(() => {
+            const btn = document.getElementById('use-suggestion-btn');
+            if (btn) {
+              btn.onclick = () => {
+                nameInput.querySelector("input").value = suggestedName;
+                symbolInput.querySelector("input").value = suggestedSymbol;
+                resultDiv.innerHTML = '';
+              };
+            }
+          }, 100);
+        }
         resultDiv.style.color = "#D32F2F";
         mintFormBtn.disabled = false;
         mintCancelBtn.disabled = false;

@@ -4,10 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "client": "vite",
+    "dev": "concurrently \"npm run client\" \"npm run server\"",
     "build": "vite build",
     "server": "node server.js",
-    "dev:all": "concurrently \"npm run dev\" \"npm run server\"",
     "vercel-build": "npm install && vite build",
     "start": "node server.js"
   },
