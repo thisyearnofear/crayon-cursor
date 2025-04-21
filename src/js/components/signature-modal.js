@@ -391,14 +391,14 @@ export class SignatureModal extends ModalBase {
     const nameInput = createFormInput({
       id: "mint-name",
       label: "Name",
-      value: "Signature Opal",
+      value: "",
       placeholder: "Enter a name for your signature",
     });
 
     const symbolInput = createFormInput({
       id: "mint-symbol",
       label: "Symbol",
-      value: "SIG",
+      value: "",
       placeholder: "Enter a symbol (3-4 letters)",
     });
 
@@ -412,7 +412,7 @@ export class SignatureModal extends ModalBase {
     const descriptionInput = createFormInput({
       id: "mint-description",
       label: "Description",
-      value: "A unique signature minted as an NFT.",
+      value: "",
       placeholder: "Enter a description for your signature",
     });
 
