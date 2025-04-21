@@ -7,7 +7,7 @@
   NPM_FLAGS = "--legacy-peer-deps"
   VITE_API_URL = "https://p01--signature--sqrfq849w2vt.code.run"
   VITE_SUPABASE_URL = "https://midnphgicryyoeubulro.supabase.co"
-  VITE_SUPABASE_ANON_KEY = "<YOUR_SUPABASE_ANON_KEY>"
+  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pZG5waGdpY3J5eW9ldWJ1bHJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUxNTMzMDEsImV4cCI6MjA2MDcyOTMwMX0.Po_3SJ5aAKOQ6CjTBL5uugkn3c-snIUvLnzOAQU3EQM"
 
 [[redirects]]
   from = "/*"
