@@ -226,24 +226,27 @@ export async function createSignatureCoin({
         // Skip on-chain simulation to avoid static revert blocking actual transaction
         skipSimulation: DEV,
         skipMetadataValidation: false,
-        // Use proxy server for IPFS fetches
+        // Use proxy server for IPFS fetches with fallback
         ipfsFetch: async (uri) => {
           const hash = uri.replace("ipfs://", "");
-          const res = await fetch(`${API_URL}/api/ipfs/${hash}`);
-          if (!res.ok)
-            throw new Error(`Failed to fetch IPFS content: ${res.status}`);
-
-          // Parse the response
-          const result = await res.json();
-
-          // Check if the response is wrapped in a content object
-          if (result && result.content) {
-            log("Extracted metadata from wrapper:", result.content);
-            return result.content;
+          // First try our proxy
+          try {
+            const res = await fetch(`${API_URL}/api/ipfs/${hash}`);
+            if (res.ok) {
+              const data = await res.json();
+              return data.content || data;
+            }
+            console.warn(`Proxy fetch failed with status ${res.status}, falling back to public gateway`);
+          } catch (proxyErr) {
+            console.warn("Error fetching from proxy server:", proxyErr);
           }
-
-          // If not wrapped, return the result directly
-          return result;
+          // Fallback to public IPFS gateway
+          const fallbackUrl = `https://gateway.pinata.cloud/ipfs/${hash}`;
+          const fallbackRes = await fetch(fallbackUrl);
+          if (!fallbackRes.ok) {
+            throw new Error(`Failed to fetch IPFS content from fallback gateway: ${fallbackRes.status}`);
+          }
+          return await fallbackRes.json();
         },
         // Only send ETH when using native currency and non-zero orderSize
         overrides:
