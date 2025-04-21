@@ -103,6 +103,8 @@ Create an optimized build:
 
 ```
 npm run build
+
+netlify deploy --prod --dir=dist --build
 ```
 
 ## ZORA Coins SDK Integration Plan
