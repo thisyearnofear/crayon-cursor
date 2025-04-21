@@ -754,7 +754,7 @@ export class SignatureModal extends ModalBase {
 
         resultDiv.appendChild(doneBtn);
 
-        // Record mint in Supabase
+        // Record mint in Supabase (unique row, prevent duplicates)
         (async () => {
           try {
             const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
@@ -765,10 +765,27 @@ export class SignatureModal extends ModalBase {
             const recordSymbol = formattedResult.coinSymbol;
             const ownerAddr = payoutRecipient;
             const mintType = this.isMobile ? 'signet' : 'insignia';
+
+            // Check for duplicate name or symbol
+            const { data: existing, error: checkError } = await supabase
+              .from('coins')
+              .select('id')
+              .or(`name.eq.${recordName},symbol.eq.${recordSymbol}`);
+            if (checkError) {
+              throw new Error('Error checking for duplicates: ' + checkError.message);
+            }
+            if (existing && existing.length > 0) {
+              throw new Error('A coin with this name or symbol already exists. Please choose a different name and symbol.');
+            }
+            // Insert new unique row
             await supabase
               .from('coins')
-              .upsert({ name: recordName, symbol: recordSymbol, owner: ownerAddr, minted: 1, mintType }, { onConflict: ['symbol'] });
+              .insert({ name: recordName, symbol: recordSymbol, owner: ownerAddr, minted: 1, mintType });
           } catch (e) {
+            // Show error in resultDiv if duplicate or other error
+            if (resultDiv) {
+              resultDiv.innerHTML = `<div style='color:#D32F2F;font-weight:bold;margin-bottom:10px;'>Failed to record mint in Supabase</div><div style='margin-bottom:10px;'>${e.message || e}</div>`;
+            }
             console.error('Failed to record mint in Supabase:', e);
           }
         })();
